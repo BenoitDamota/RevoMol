@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evomol"
+version = "0.1.0"
+description = "Evolutionary algorithm for molecular property optimisation."
+readme = "README.rst"
+authors = [
+    { name = "Cyril Grelier", email = "cyril.grelier[at]univ-angers.fr" },
+]
+maintainers = [
+    { name = "Cyril Grelier", email = "cyril.grelier[at]univ-angers.fr" },
+]
+classifiers = []
+license = { text = "MIT license" }
+dependencies = ["typer"]
+
+[project.optional-dependencies]
+dev = [
+    "coverage", # testing
+    "mypy",     # linting
+    "pytest",   # testing
+    "ruff",     # linting
+]
+
+[project.urls]
+
+bugs = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}/issues"
+changelog = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}/blob/master/changelog.md"
+homepage = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.project_slug }}"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
+
+
+# Mypy
+# ----
+
+[tool.mypy]
+files = "."
+
+# Use strict defaults
+strict = true
+warn_unreachable = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+# Don't require test functions to include types
+module = "tests.*,rdkit.*,scipy.*,networkx.*,cclib.*,ifg.*,matplotlib.*,sascorer.*"
+allow_untyped_defs = true
+disable_error_code = "attr-defined"
+ignore_missing_imports = true
+
+# ruff
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+unfixable = ["F401"]
+
+
+[tool.ruff.format]
+
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
