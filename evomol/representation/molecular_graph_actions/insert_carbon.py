@@ -64,11 +64,11 @@ class ActionSpaceInsertCarbonMolGraph(ActionSpace):
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
 
-        action_list: list[Action] = []
-
         # insertion only possible if the molecule is not at its maximum size
         if mol_graph.nb_atoms >= Molecule.max_heavy_atoms:
-            return action_list
+            return []
+
+        action_list: list[Action] = []
 
         formal_charge_vector = mol_graph.formal_charge_vector()
 

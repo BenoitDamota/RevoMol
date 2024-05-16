@@ -49,18 +49,9 @@ class ActionSpaceAddAtomMolGraph(ActionSpace):
     List possible actions on molecular graphs to add an atom.
     """
 
-    def __init__(self, accepted_atoms: list[str], allow_bonding: bool = False):
-        """Initialize the Add Atom neighborhood operation.
-
-
-        Args:
-            allow_bonding (bool, optional):
-                If True, atoms can be added either without bonding or with
-                bonding to an atom that has free electrons and is connectable.
-                Defaults to False.
-        """
+    def __init__(self, accepted_atoms: list[str]):
+        """Initialize the Add Atom neighborhood operation."""
         self.accepted_atoms: list[str] = accepted_atoms
-        self.allow_bonding: bool = allow_bonding
 
     @override
     def list_actions(self, molecule: Molecule) -> list[Action]:
@@ -68,32 +59,93 @@ class ActionSpaceAddAtomMolGraph(ActionSpace):
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        # if not self.allow_bonding: TODO remove
-        #     if mol_graph.nb_atoms >= Molecule.max_heavy_atoms:
-        #         return []
-        #     # all atoms are valid if the molecule is not at its maximum size
-        #     return [AddAtomMolGraph(0, atom_type)
-        # for atom_type in self.accepted_atoms]
 
-        action_list: list[Action] = []
+        # if the molecule is too big, we cannot add an atom
+        if mol_graph.nb_atoms >= Molecule.max_heavy_atoms:
+            return []
 
+        # if the molecule is empty, we can add any atom
         if mol_graph.nb_atoms == 0:
-            # possibility of adding an unconnected atom if the molecule is empty
             return [AddAtomMolGraph(0, atom_type) for atom_type in self.accepted_atoms]
 
-        # possibility of adding an atom with a bond
-        if mol_graph.nb_atoms < Molecule.max_heavy_atoms:
-            free_electrons_vector = mol_graph.free_electrons_vector()
-            formal_charge_vector = mol_graph.formal_charge_vector()
+        # otherwise, we have to check the free electrons and the formal charge
 
-            # the new atom can be bonded to an existing atom if it has free
-            # electrons and has no formal charge
-            for atom_idx in range(mol_graph.nb_atoms):
-                action_list.extend(
-                    AddAtomMolGraph(atom_idx, atom_type)
-                    for atom_type in self.accepted_atoms
-                    if free_electrons_vector[atom_idx] > 0
-                    and formal_charge_vector[atom_idx] == 0
-                )
+        free_electrons_vector = mol_graph.free_electrons_vector()
+        formal_charge_vector = mol_graph.formal_charge_vector()
 
-        return action_list
+        # the new atom can be bonded to an existing atom if it has free
+        # electrons and has no formal charge
+        return [
+            AddAtomMolGraph(atom_idx, atom_type)
+            for atom_idx in range(mol_graph.nb_atoms)
+            if free_electrons_vector[atom_idx] > 0
+            and formal_charge_vector[atom_idx] == 0
+            for atom_type in self.accepted_atoms
+        ]
+
+
+"""
+class AddAtomMolGraph(Action):
+
+    accepted_atoms: list[str]
+
+    def __init__(self, index_atom: int, atom_type: str) -> None:
+        # index of the atom to bond to the new atom
+        self.index_atom: int = index_atom
+        # type of the new atom
+        self.atom_type: str = atom_type
+
+    @override
+    def apply(self, molecule: Molecule) -> Molecule:
+        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+        assert mol_graph is not None
+        new_mol_graph = MolecularGraph(mol_graph.smiles)
+
+        # Adding the atom
+        new_mol_graph.add_atom(self.atom_type)
+
+        if new_mol_graph.nb_atoms > 1:
+            # Creating a bond from the last inserted atom to the existing one
+            new_mol_graph.set_bond(new_mol_graph.nb_atoms - 1, self.index_atom, 1)
+
+        try:
+            new_mol_graph.update_representation()
+        except Exception as e:
+            print("Addition caused an error.")
+            raise e
+
+        return Molecule(new_mol_graph.canonical_smiles)
+
+    def __repr__(self) -> str:
+        return f"AddAtomMolGraph({self.index_atom}, {self.atom_type})"
+
+    @override
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
+
+        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+        assert mol_graph is not None
+
+        # if the molecule is too big, we cannot add an atom
+        if mol_graph.nb_atoms >= Molecule.max_heavy_atoms:
+            return []
+
+        # if the molecule is empty, we can add any atom
+        if mol_graph.nb_atoms == 0:
+            return [AddAtomMolGraph(0, atom_type) for atom_type in cls.accepted_atoms]
+
+        # otherwise, we have to check the free electrons and the formal charge
+
+        free_electrons_vector = mol_graph.free_electrons_vector()
+        formal_charge_vector = mol_graph.formal_charge_vector()
+
+        # the new atom can be bonded to an existing atom if it has free
+        # electrons and has no formal charge
+        return [
+            AddAtomMolGraph(atom_idx, atom_type)
+            for atom_idx in range(mol_graph.nb_atoms)
+            if free_electrons_vector[atom_idx] > 0
+            and formal_charge_vector[atom_idx] == 0
+            for atom_type in cls.accepted_atoms
+        ]
+"""

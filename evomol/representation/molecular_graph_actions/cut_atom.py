@@ -63,11 +63,14 @@ class ActionSpaceCutAtomMolGraph(ActionSpace):
 
         action_list: list[Action] = []
 
-        formal_charge_vector = mol_graph.formal_charge_vector()
+        formal_charges = mol_graph.formal_charge_vector()
 
         for atom_to_cut in range(mol_graph.nb_atoms):
+            # we cannot cut a non mutable atom
             if not mol_graph.atom_mutability(atom_to_cut):
                 continue
+
+            # if there is two atoms bonded to the atom to cut
             bonds_to = [
                 atom2_idx
                 for atom2_idx in range(mol_graph.nb_atoms)
@@ -76,13 +79,15 @@ class ActionSpaceCutAtomMolGraph(ActionSpace):
             if len(bonds_to) != 2:
                 continue
 
+            # check if the two atoms bonded to the atom to cut are not connected
+            # and have no formal charge
             if (
-                mol_graph.bond_type_num(bonds_to[0], bonds_to[1]) == 0
-                and formal_charge_vector[bonds_to[0]] == 0
-                and formal_charge_vector[bonds_to[1]] == 0
+                mol_graph.bond_type_num(bonds_to[0], bonds_to[1]) != 0
+                or formal_charges[bonds_to[0]] != 0
+                or formal_charges[bonds_to[1]] != 0
             ):
-                action_list.append(
-                    CutAtomMolGraph(atom_to_cut, bonds_to[0], bonds_to[1])
-                )
+                continue
+
+            action_list.append(CutAtomMolGraph(atom_to_cut, bonds_to[0], bonds_to[1]))
 
         return action_list

@@ -48,13 +48,10 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-lint/flake8: ## check style with flake8
-	flake8 evomol tests
-
-lint/ruff:
+lint: ## check style
 	ruff check --fix evomol tests
-
-lint: lint/flake8 ## check style
+	mypy evomol tests
+	pylint evomol tests
 
 test: ## run tests quickly with the default Python
 	pytest

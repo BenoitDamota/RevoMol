@@ -45,12 +45,12 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
             if not possible_actions:
                 raise ValueError("No possible actions")
 
+            pprint_action_space(possible_actions)
+
             # select a random representation
             representation: MoleculeRepresentation = random.choice(
                 list(possible_actions.keys())
             )
-
-            pprint_action_space(possible_actions)
 
             # select a random action space
             action_space: ActionSpace = random.choice(

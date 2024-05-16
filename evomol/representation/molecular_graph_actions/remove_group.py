@@ -113,16 +113,16 @@ class ActionSpaceRemoveGroupMolGraph(ActionSpace):
                 )
             ):
                 continue
-            # extract the indices of both connected components if the current
-            # bond was removed
-            connected_component_1 = connected_component_after_removing_bond(
-                mol_graph.adjacency_matrix, atom1, atom2
-            )
-            connected_component_2 = connected_component_after_removing_bond(
-                mol_graph.adjacency_matrix, atom2, atom1
-            )
 
             if self.only_remove_smallest_group:
+                # extract the indices of both connected components if the current
+                # bond was removed
+                connected_component_1 = connected_component_after_removing_bond(
+                    mol_graph.adjacency_matrix, atom1, atom2
+                )
+                connected_component_2 = connected_component_after_removing_bond(
+                    mol_graph.adjacency_matrix, atom2, atom1
+                )
                 if len(connected_component_1) <= len(connected_component_2):
                     action_list.append(
                         RemoveGroupMolGraph(

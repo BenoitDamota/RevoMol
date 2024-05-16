@@ -64,7 +64,7 @@ class MolecularGraph(MoleculeRepresentation):
         #         ActionSpaceAddAtomMolGraph(
         #             accepted_atoms=accepted_atoms, allow_bonding=False
         #         ),
-        #         ActionSpaceChangeBondMolGraph(prevent_removing_creating_bonds=False),
+        #         ActionSpaceChangeBondMolGraph(avoid_break_bond=False),
         #         ActionSpaceCutAtomMolGraph(),
         #         ActionSpaceInsertCarbonMolGraph(),
         #         ActionSpaceMoveFunctionalGroupMolGraph(),

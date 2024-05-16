@@ -46,10 +46,10 @@ class ActionSpaceChangeBondMolGraph(ActionSpace):
     List possible actions on molecular graphs to change a bond between two atoms.
     """
 
-    def __init__(self, prevent_removing_creating_bonds: bool = False):
+    def __init__(self, avoid_break_bond: bool = False):
         # whether to prevent the change of bond from type>= 1 to type 0
         # (=breaking the bond)
-        self.prevent_removing_creating_bonds: bool = prevent_removing_creating_bonds
+        self.avoid_break_bond: bool = avoid_break_bond
 
     @override
     def list_actions(self, molecule: Molecule) -> list[Action]:
@@ -59,65 +59,47 @@ class ActionSpaceChangeBondMolGraph(ActionSpace):
 
         action_list: list[Action] = []
 
-        free_electons_vect = mol_graph.free_electrons_vector()
-        formal_charge_vect = mol_graph.formal_charge_vector()
-        bridge_matrix = mol_graph.bridge_bonds_matrix()
+        free_electrons = mol_graph.free_electrons_vector()
+        formal_charges = mol_graph.formal_charge_vector()
+        bridge_bond_matrix = mol_graph.bridge_bonds_matrix()
 
         # for each bond
         for atom1, atom2 in itertools.combinations(range(mol_graph.nb_atoms), 2):
             current_bond = mol_graph.bond_type_num(atom1, atom2)
 
+            mutability_ok = mol_graph.atom_mutability(
+                atom1
+            ) or mol_graph.atom_mutability(atom2)
+
+            # Bond involving atoms with formal charges cannot be changed
+            formal_charge_ok = formal_charges[atom1] == 0 and formal_charges[atom2] == 0
+
+            if not mutability_ok or not formal_charge_ok:
+                continue
+
             # for each bond type
-            for bond_to_form in range(4):
-                delta_bond = bond_to_form - current_bond
-
-                formal_charge_ok = (
-                    formal_charge_vect[atom1] == 0 and formal_charge_vect[atom2] == 0
-                )
-                mutability_ok = mol_graph.atom_mutability(
-                    atom1
-                ) or mol_graph.atom_mutability(atom2)
-
-                if not mutability_ok or not formal_charge_ok:
+            for new_bond in (0, 1, 2, 3):
+                if current_bond == new_bond:
                     continue
 
                 # Bond decrement
                 # only bond that are not bridges can be completely removed.
-                # Bond involving atoms with formal charges cannot be changed.
                 # Bonds can be changed only if at least one of the atoms is
                 # mutable
-                if delta_bond < 0:
-                    # Checking if the prevent breaking bonds constraint is
-                    # respected if set
-                    prevent_breaking_bonds_constraint_respected = (
-                        not self.prevent_removing_creating_bonds or bond_to_form > 0
-                    )
-
-                    if (
-                        not bridge_matrix[atom1][atom2] or bond_to_form > 0
-                    ) and prevent_breaking_bonds_constraint_respected:
-                        action_list.append(
-                            ChangeBondMolGraph(atom1, atom2, bond_to_form)
-                        )
+                if new_bond < current_bond:
+                    if new_bond > 0 or (
+                        not bridge_bond_matrix[atom1][atom2]
+                        and not self.avoid_break_bond
+                    ):
+                        action_list.append(ChangeBondMolGraph(atom1, atom2, new_bond))
 
                 # Bond increment
+                # delta = new_bond - current_bond
                 # Bond can be incremented of delta if each atom involved has at
                 # least delta free electrons
-                # Bonds involving atoms with formal charges cannot be changed
-                elif delta_bond > 0:
-                    # Checking if the prevent breaking bonds constraint is
-                    # respected if set
-                    prevent_breaking_bonds_constraint_respected = (
-                        not self.prevent_removing_creating_bonds or current_bond > 0
-                    )
-
-                    if (
-                        min(free_electons_vect[atom1], free_electons_vect[atom2])
-                        >= delta_bond
-                        and prevent_breaking_bonds_constraint_respected
-                    ):
-                        action_list.append(
-                            ChangeBondMolGraph(atom1, atom2, bond_to_form)
-                        )
+                else:
+                    delta = new_bond - current_bond
+                    if min(free_electrons[atom1], free_electrons[atom2]) >= delta:
+                        action_list.append(ChangeBondMolGraph(atom1, atom2, new_bond))
 
         return action_list

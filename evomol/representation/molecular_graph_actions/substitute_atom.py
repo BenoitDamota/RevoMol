@@ -63,9 +63,9 @@ class ActionSpaceSubstituteAtomMolGraph(ActionSpace):
 
         for atom in range(mol_graph.nb_atoms):
             atom_type = mol_graph.atom_type(atom)
-            expl_valence = mol_graph.atom_degree(atom, as_multigraph=True)
+            explicit_valence = mol_graph.atom_degree(atom, as_multigraph=True)
             for subst in self.accepted_substitutions[atom_type]:
-                if max_valences[subst] >= expl_valence:
+                if max_valences[subst] >= explicit_valence:
                     action_list.append(SubstituteAtomMolGraph(atom, subst))
 
         return action_list

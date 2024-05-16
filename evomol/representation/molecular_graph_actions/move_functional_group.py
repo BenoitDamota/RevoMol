@@ -50,9 +50,7 @@ class MoveFunctionalGroupMolGraph(Action):
         bridge1_in_first_component = self.bridge_atom1 in connected_components[0]
         new_link_in_first_component = self.new_link_idx in connected_components[0]
 
-        if (bridge1_in_first_component and new_link_in_first_component) or (
-            not bridge1_in_first_component and not new_link_in_first_component
-        ):
+        if bridge1_in_first_component == new_link_in_first_component:
             atom_to_bond = self.bridge_atom2
 
         # Extracting the bond type to be removed

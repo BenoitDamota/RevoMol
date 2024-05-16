@@ -15,7 +15,7 @@ from evomol.representation.molecular_graph_actions import (
     ActionSpaceRemoveGroupMolGraph,
     ActionSpaceSubstituteAtomMolGraph,
 )
-from evomol.representation.molecule import Molecule, pprint_action_space
+from evomol.representation.molecule import Molecule, pprint_action_space, max_valence
 from evomol.representation.smiles import SMILES
 
 
@@ -25,7 +25,7 @@ def main() -> None:
     Molecule.representations_class = [MolecularGraph]
     Molecule.max_heavy_atoms = 38
 
-    accepted_atoms: list[str] = ["C", "O", "N"]
+    accepted_atoms: list[str] = ["C", "O", "N", "F"]
     accepted_substitutions: dict[str, list[str]] = {}
 
     for accepted_atom in accepted_atoms:
@@ -36,11 +36,11 @@ def main() -> None:
                     curr_atom_subst.append(other_accepted_atom)
             accepted_substitutions[accepted_atom] = curr_atom_subst
 
-    accepted_substitutions = {"C": ["O", "N"], "O": ["C"], "N": ["C"]}
+    # accepted_substitutions = {"C": ["O", "N"], "O": ["C", "N"], "N": ["C", "O"]}
 
     MolecularGraph.action_space = [
-        ActionSpaceAddAtomMolGraph(accepted_atoms=accepted_atoms, allow_bonding=True),
-        ActionSpaceChangeBondMolGraph(prevent_removing_creating_bonds=False),
+        ActionSpaceAddAtomMolGraph(accepted_atoms=accepted_atoms),
+        ActionSpaceChangeBondMolGraph(avoid_break_bond=False),
         ActionSpaceCutAtomMolGraph(),
         ActionSpaceInsertCarbonMolGraph(),
         ActionSpaceMoveFunctionalGroupMolGraph(),
@@ -51,13 +51,30 @@ def main() -> None:
         ),
     ]
 
-    mol = Molecule("CC(=O)OC1=CC=CC=C1C(=O)O")
+    # for smiles in ("C", "C(C)(C)(C)(C)", "O=C=O", "N"):
+    #     mol = Molecule(smiles)
+    #     mol_graph = mol.get_representation(MolecularGraph)
+    #     for atom in range(mol_graph.nb_atoms):
+    #         print(
+    #             mol,
+    #             atom,
+    #             max_valence(mol_graph.atom_type(atom)),
+    #             mol_graph.atom_degree(atom, as_multigraph=True),
+    #             mol_graph.atom_degree(atom, as_multigraph=False),
+    #         )
+
+    # mol = Molecule("CC(=O)OC1=CC=CC=C1C(=O)O")
+    mol = Molecule("O=CC1=NC=CC=C1")
     # mol = Molecule("CCO")
     # mol = Molecule("")
     actions = mol.list_all_possible_actions()
     pprint_action_space(actions)
+    for representation, action_space in actions.items():
+        for _, actions_list in action_space.items():
+            for action in actions_list:
+                print(action, "->", action.apply(mol))
 
-    NeighborhoodStrategy.depth = 10
+    NeighborhoodStrategy.depth = 1
     RandomNeighborhoodStrategy().mutate(mol)
 
-    # garder voisins d'une molécule dans la mémoire.
+    # # garder voisins d'une molécule dans la mémoire.

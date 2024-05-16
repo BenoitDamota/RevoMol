@@ -165,7 +165,7 @@ class Molecule:
     def __init__(self, str_id: str):
         """init the molecule from a string and create its various representations.
 
-        Args:list_actions_space
+        Args:
             str_id (str): string used to identify the molecule(SMILES, InChI, ...)
         """
         self.id_representation: MoleculeRepresentation = (
