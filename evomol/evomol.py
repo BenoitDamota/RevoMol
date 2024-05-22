@@ -6,16 +6,16 @@ from evomol.neighborhood_strategy import (
 )
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecular_graph_actions import (
-    ActionSpaceAddAtomMolGraph,
-    ActionSpaceChangeBondMolGraph,
-    ActionSpaceCutAtomMolGraph,
-    ActionSpaceInsertCarbonMolGraph,
-    ActionSpaceMoveFunctionalGroupMolGraph,
-    ActionSpaceRemoveAtomMolGraph,
-    ActionSpaceRemoveGroupMolGraph,
-    ActionSpaceSubstituteAtomMolGraph,
+    AddAtomMolGraph,
+    ChangeBondMolGraph,
+    CutAtomMolGraph,
+    InsertCarbonMolGraph,
+    MoveFunctionalGroupMolGraph,
+    RemoveAtomMolGraph,
+    RemoveGroupMolGraph,
+    SubstituteAtomMolGraph,
 )
-from evomol.representation.molecule import Molecule, pprint_action_space, max_valence
+from evomol.representation.molecule import Molecule, pprint_action_space
 from evomol.representation.smiles import SMILES
 
 
@@ -25,30 +25,31 @@ def main() -> None:
     Molecule.representations_class = [MolecularGraph]
     Molecule.max_heavy_atoms = 38
 
-    accepted_atoms: list[str] = ["C", "O", "N", "F"]
+    Molecule.accepted_atoms = ["C", "O", "N", "F"]
     accepted_substitutions: dict[str, list[str]] = {}
 
-    for accepted_atom in accepted_atoms:
+    for accepted_atom in Molecule.accepted_atoms:
         if accepted_atom != "H":
             curr_atom_subst: list[str] = []
-            for other_accepted_atom in accepted_atoms:
+            for other_accepted_atom in Molecule.accepted_atoms:
                 if other_accepted_atom != accepted_atom:
                     curr_atom_subst.append(other_accepted_atom)
             accepted_substitutions[accepted_atom] = curr_atom_subst
 
     # accepted_substitutions = {"C": ["O", "N"], "O": ["C", "N"], "N": ["C", "O"]}
 
+    ChangeBondMolGraph.avoid_break_bond = False
+    RemoveGroupMolGraph.only_remove_smallest_group = False
+    SubstituteAtomMolGraph.accepted_substitutions = accepted_substitutions
     MolecularGraph.action_space = [
-        ActionSpaceAddAtomMolGraph(accepted_atoms=accepted_atoms),
-        ActionSpaceChangeBondMolGraph(avoid_break_bond=False),
-        ActionSpaceCutAtomMolGraph(),
-        ActionSpaceInsertCarbonMolGraph(),
-        ActionSpaceMoveFunctionalGroupMolGraph(),
-        ActionSpaceRemoveAtomMolGraph(),
-        ActionSpaceRemoveGroupMolGraph(only_remove_smallest_group=False),
-        ActionSpaceSubstituteAtomMolGraph(
-            accepted_substitutions=accepted_substitutions
-        ),
+        AddAtomMolGraph,
+        ChangeBondMolGraph,
+        CutAtomMolGraph,
+        InsertCarbonMolGraph,
+        MoveFunctionalGroupMolGraph,
+        RemoveAtomMolGraph,
+        RemoveGroupMolGraph,
+        SubstituteAtomMolGraph,
     ]
 
     # for smiles in ("C", "C(C)(C)(C)(C)", "O=C=O", "N"):
@@ -69,7 +70,7 @@ def main() -> None:
     # mol = Molecule("")
     actions = mol.list_all_possible_actions()
     pprint_action_space(actions)
-    for representation, action_space in actions.items():
+    for _, action_space in actions.items():
         for _, actions_list in action_space.items():
             for action in actions_list:
                 print(action, "->", action.apply(mol))

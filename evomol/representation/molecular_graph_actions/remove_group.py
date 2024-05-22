@@ -9,7 +9,7 @@ import numpy as np
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 def connected_component_after_removing_bond(
@@ -42,13 +42,21 @@ class RemoveGroupMolGraph(Action):
     Remove a group of connected atoms from the molecular graph.
     """
 
-    def __init__(self, bridge_atom_to_keep: int, bridge_atom_to_remove: int) -> None:
+    only_remove_smallest_group: bool = False
+
+    def __init__(
+        self,
+        molecule: Molecule,
+        bridge_atom_to_keep: int,
+        bridge_atom_to_remove: int,
+    ) -> None:
+        super().__init__(molecule)
         self.bridge_atom_to_keep: int = bridge_atom_to_keep
         self.bridge_atom_to_remove: int = bridge_atom_to_remove
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph = MolecularGraph(mol_graph.smiles)
 
@@ -76,20 +84,13 @@ class RemoveGroupMolGraph(Action):
     def __repr__(self) -> str:
         return (
             f"RemoveGroupMolGraph("
+            f"{self.molecule}, "
             f"{self.bridge_atom_to_keep}, {self.bridge_atom_to_remove})"
         )
 
-
-class ActionSpaceRemoveGroupMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to remove a group of connected atoms.
-    """
-
-    def __init__(self, only_remove_smallest_group: bool = False) -> None:
-        self.only_remove_smallest_group = only_remove_smallest_group
-
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to remove a group from the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
@@ -114,7 +115,7 @@ class ActionSpaceRemoveGroupMolGraph(ActionSpace):
             ):
                 continue
 
-            if self.only_remove_smallest_group:
+            if cls.only_remove_smallest_group:
                 # extract the indices of both connected components if the current
                 # bond was removed
                 connected_component_1 = connected_component_after_removing_bond(
@@ -126,24 +127,32 @@ class ActionSpaceRemoveGroupMolGraph(ActionSpace):
                 if len(connected_component_1) <= len(connected_component_2):
                     action_list.append(
                         RemoveGroupMolGraph(
-                            bridge_atom_to_keep=atom2, bridge_atom_to_remove=atom1
+                            molecule,
+                            bridge_atom_to_keep=atom2,
+                            bridge_atom_to_remove=atom1,
                         )
                     )
                 if len(connected_component_2) <= len(connected_component_1):
                     action_list.append(
                         RemoveGroupMolGraph(
-                            bridge_atom_to_keep=atom1, bridge_atom_to_remove=atom2
+                            molecule,
+                            bridge_atom_to_keep=atom1,
+                            bridge_atom_to_remove=atom2,
                         )
                     )
             else:
                 action_list.append(
                     RemoveGroupMolGraph(
-                        bridge_atom_to_keep=atom1, bridge_atom_to_remove=atom2
+                        molecule,
+                        bridge_atom_to_keep=atom1,
+                        bridge_atom_to_remove=atom2,
                     )
                 )
                 action_list.append(
                     RemoveGroupMolGraph(
-                        bridge_atom_to_keep=atom2, bridge_atom_to_remove=atom1
+                        molecule,
+                        bridge_atom_to_keep=atom2,
+                        bridge_atom_to_remove=atom1,
                     )
                 )
 

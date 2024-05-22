@@ -7,7 +7,7 @@ import itertools
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 class InsertCarbonMolGraph(Action):
@@ -17,14 +17,20 @@ class InsertCarbonMolGraph(Action):
     The initial bond is removed.
     """
 
-    def __init__(self, atom1_idx_to_bond: int, atom2_idx_to_bond: int) -> None:
+    def __init__(
+        self,
+        molecule: Molecule,
+        atom1_idx_to_bond: int,
+        atom2_idx_to_bond: int,
+    ) -> None:
+        super().__init__(molecule)
         # index of the atom to bond to the new atom
         self.atom1_idx_to_bond: int = atom1_idx_to_bond
         self.atom2_idx_to_bond: int = atom2_idx_to_bond
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph = MolecularGraph(mol_graph.smiles)
 
@@ -49,17 +55,13 @@ class InsertCarbonMolGraph(Action):
 
     def __repr__(self) -> str:
         return (
-            f"InsertCarbonMolGraph({self.atom1_idx_to_bond}, {self.atom2_idx_to_bond})"
+            f"InsertCarbonMolGraph({self.molecule}, "
+            f"{self.atom1_idx_to_bond}, {self.atom2_idx_to_bond})"
         )
 
-
-class ActionSpaceInsertCarbonMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to X.
-    """
-
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to X to the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
@@ -85,5 +87,5 @@ class ActionSpaceInsertCarbonMolGraph(ActionSpace):
                     mol_graph.atom_mutability(atom1) or mol_graph.atom_mutability(atom2)
                 )
             ):
-                action_list.append(InsertCarbonMolGraph(atom1, atom2))
+                action_list.append(InsertCarbonMolGraph(molecule, atom1, atom2))
         return action_list

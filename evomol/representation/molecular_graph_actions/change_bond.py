@@ -7,7 +7,7 @@ import itertools
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 class ChangeBondMolGraph(Action):
@@ -16,14 +16,23 @@ class ChangeBondMolGraph(Action):
 
     """
 
-    def __init__(self, atom1: int, atom2: int, bond_type: int) -> None:
+    avoid_break_bond: bool = False
+
+    def __init__(
+        self,
+        molecule: Molecule,
+        atom1: int,
+        atom2: int,
+        bond_type: int,
+    ) -> None:
+        super().__init__(molecule)
         self.atom1: int = atom1
         self.atom2: int = atom2
         self.bond_type: int = bond_type
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph = MolecularGraph(mol_graph.smiles)
 
@@ -38,21 +47,14 @@ class ChangeBondMolGraph(Action):
         return Molecule(new_mol_graph.canonical_smiles)
 
     def __repr__(self) -> str:
-        return f"ChangeBondMolGraph({self.atom1}, {self.atom2}, {self.bond_type})"
-
-
-class ActionSpaceChangeBondMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to change a bond between two atoms.
-    """
-
-    def __init__(self, avoid_break_bond: bool = False):
-        # whether to prevent the change of bond from type>= 1 to type 0
-        # (=breaking the bond)
-        self.avoid_break_bond: bool = avoid_break_bond
+        return (
+            f"ChangeBondMolGraph({self.molecule}, "
+            f"{self.atom1}, {self.atom2}, {self.bond_type})"
+        )
 
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to change a bond in the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
@@ -89,9 +91,11 @@ class ActionSpaceChangeBondMolGraph(ActionSpace):
                 if new_bond < current_bond:
                     if new_bond > 0 or (
                         not bridge_bond_matrix[atom1][atom2]
-                        and not self.avoid_break_bond
+                        and not cls.avoid_break_bond
                     ):
-                        action_list.append(ChangeBondMolGraph(atom1, atom2, new_bond))
+                        action_list.append(
+                            ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
+                        )
 
                 # Bond increment
                 # delta = new_bond - current_bond
@@ -100,6 +104,8 @@ class ActionSpaceChangeBondMolGraph(ActionSpace):
                 else:
                     delta = new_bond - current_bond
                     if min(free_electrons[atom1], free_electrons[atom2]) >= delta:
-                        action_list.append(ChangeBondMolGraph(atom1, atom2, new_bond))
+                        action_list.append(
+                            ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
+                        )
 
         return action_list

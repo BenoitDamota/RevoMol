@@ -5,7 +5,7 @@ Example of a molecular graph action.
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 class XXXMolGraph(Action):
@@ -13,12 +13,12 @@ class XXXMolGraph(Action):
     XXX to the molecular graph.
     """
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, molecule: Molecule) -> None:
+        super().__init__(molecule)
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph = MolecularGraph(mol_graph.smiles)
 
@@ -31,19 +31,11 @@ class XXXMolGraph(Action):
         return Molecule(new_mol_graph.canonical_smiles)
 
     def __repr__(self) -> str:
-        return f"XXXMolGraph({self})"
-
-
-class ActionSpaceXXXMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to XXX.
-    """
-
-    def __init__(self) -> None:
-        pass
+        return f"XXXMolGraph({self.molecule})"
 
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to XXX to the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)

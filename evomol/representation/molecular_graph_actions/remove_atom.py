@@ -6,7 +6,7 @@ import networkx as nx
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 class RemoveAtomMolGraph(Action):
@@ -14,13 +14,14 @@ class RemoveAtomMolGraph(Action):
     Remove an atom from the molecular graph.
     """
 
-    def __init__(self, atom_idx: int) -> None:
+    def __init__(self, molecule: Molecule, atom_idx: int) -> None:
+        super().__init__(molecule)
         # index of the atom to remove
         self.atom_idx: int = atom_idx
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph = MolecularGraph(mol_graph.smiles)
 
@@ -36,16 +37,11 @@ class RemoveAtomMolGraph(Action):
         return Molecule(new_mol_graph.canonical_smiles)
 
     def __repr__(self) -> str:
-        return f"RemoveAtomMolGraph({self.atom_idx})"
-
-
-class ActionSpaceRemoveAtomMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to remove an atom.
-    """
+        return f"RemoveAtomMolGraph({self.molecule}, {self.atom_idx})"
 
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to remove an atom from the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
@@ -68,6 +64,6 @@ class ActionSpaceRemoveAtomMolGraph(ActionSpace):
         # if it has only one neighbor or if none of its bonds are bridges
         for i in range(mol_graph.nb_atoms):
             if not articulation_points[i] and mol_graph.atom_mutability(i):
-                action_list.append(RemoveAtomMolGraph(i))
+                action_list.append(RemoveAtomMolGraph(molecule, i))
 
         return action_list

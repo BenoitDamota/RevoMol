@@ -5,7 +5,7 @@ Cut an atom from the molecular graph.
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 class CutAtomMolGraph(Action):
@@ -13,7 +13,14 @@ class CutAtomMolGraph(Action):
     Cut an atom from the molecular graph.
     """
 
-    def __init__(self, atom_to_cut: int, atom1_to_bond: int, atom2_to_bond: int):
+    def __init__(
+        self,
+        molecule: Molecule,
+        atom_to_cut: int,
+        atom1_to_bond: int,
+        atom2_to_bond: int,
+    ):
+        super().__init__(molecule)
         # index of the atom to cut
         self.atom_to_cut: int = atom_to_cut
         # index of the atom to bond to the new atom
@@ -21,8 +28,8 @@ class CutAtomMolGraph(Action):
         self.atom2_to_bond: int = atom2_to_bond
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
 
         new_mol_graph: MolecularGraph = MolecularGraph(mol_graph.smiles)
@@ -46,17 +53,13 @@ class CutAtomMolGraph(Action):
     def __repr__(self) -> str:
         return (
             "CutAtomMolGraph("
-            f"{self.atom_to_cut}, {self.atom1_to_bond}, {self.atom2_to_bond})"
+            f"{self.molecule},{self.atom_to_cut}, "
+            f"{self.atom1_to_bond}, {self.atom2_to_bond})"
         )
 
-
-class ActionSpaceCutAtomMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to cut an atom.
-    """
-
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to cut an atom from the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
@@ -88,6 +91,8 @@ class ActionSpaceCutAtomMolGraph(ActionSpace):
             ):
                 continue
 
-            action_list.append(CutAtomMolGraph(atom_to_cut, bonds_to[0], bonds_to[1]))
+            action_list.append(
+                CutAtomMolGraph(molecule, atom_to_cut, bonds_to[0], bonds_to[1])
+            )
 
         return action_list

@@ -39,14 +39,14 @@ class MolecularGraph(MoleculeRepresentation):
         # def set_generic_action_space(cls, accepted_atoms: list[str]) -> None:
         # """Set the generic action space for the molecular graph representation."""
         # from evomol.representation.molecular_graph_actions import (
-        #     ActionSpaceAddAtomMolGraph,
-        #     ActionSpaceChangeBondMolGraph,
-        #     ActionSpaceCutAtomMolGraph,
-        #     ActionSpaceInsertCarbonMolGraph,
-        #     ActionSpaceMoveFunctionalGroupMolGraph,
-        #     ActionSpaceRemoveAtomMolGraph,
-        #     ActionSpaceRemoveGroupMolGraph,
-        #     ActionSpaceSubstituteAtomMolGraph,
+        #     AddAtomMolGraph,
+        #     ChangeBondMolGraph,
+        #     CutAtomMolGraph,
+        #     InsertCarbonMolGraph,
+        #     MoveFunctionalGroupMolGraph,
+        #     RemoveAtomMolGraph,
+        #     RemoveGroupMolGraph,
+        #     SubstituteAtomMolGraph,
         # )
 
         # accepted_substitutions: dict[str, list[str]] = {
@@ -61,16 +61,16 @@ class MolecularGraph(MoleculeRepresentation):
 
         # cls.set_action_spaces(
         #     [
-        #         ActionSpaceAddAtomMolGraph(
+        #         AddAtomMolGraph(
         #             accepted_atoms=accepted_atoms, allow_bonding=False
         #         ),
-        #         ActionSpaceChangeBondMolGraph(avoid_break_bond=False),
-        #         ActionSpaceCutAtomMolGraph(),
-        #         ActionSpaceInsertCarbonMolGraph(),
-        #         ActionSpaceMoveFunctionalGroupMolGraph(),
-        #         ActionSpaceRemoveAtomMolGraph(),
-        #         ActionSpaceRemoveGroupMolGraph(only_remove_smallest_group=True),
-        #         ActionSpaceSubstituteAtomMolGraph(
+        #         ChangeBondMolGraph(avoid_break_bond=False),
+        #         CutAtomMolGraph(),
+        #         InsertCarbonMolGraph(),
+        #         MoveFunctionalGroupMolGraph(),
+        #         RemoveAtomMolGraph(),
+        #         RemoveGroupMolGraph(only_remove_smallest_group=True),
+        #         SubstituteAtomMolGraph(
         #             accepted_substitutions=accepted_substitutions
         #         ),
         #     ]

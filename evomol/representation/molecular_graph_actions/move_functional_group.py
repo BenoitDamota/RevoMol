@@ -8,7 +8,7 @@ import networkx as nx
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionSpace, Molecule
+from evomol.representation.molecule import Action, Molecule
 
 
 class MoveFunctionalGroupMolGraph(Action):
@@ -18,10 +18,12 @@ class MoveFunctionalGroupMolGraph(Action):
 
     def __init__(
         self,
+        molecule: Molecule,
         bridge_atom1: int,
         bridge_atom2: int,
         new_link_idx: int,
     ) -> None:
+        super().__init__(molecule)
         # index of the atoms in the bridge to move
         self.bridge_atom1: int = bridge_atom1
         self.bridge_atom2: int = bridge_atom2
@@ -29,8 +31,8 @@ class MoveFunctionalGroupMolGraph(Action):
         self.new_link_idx: int = new_link_idx
 
     @override
-    def apply(self, molecule: Molecule) -> Molecule:
-        mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+    def apply(self) -> Molecule:
+        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph = MolecularGraph(mol_graph.smiles)
 
@@ -77,17 +79,13 @@ class MoveFunctionalGroupMolGraph(Action):
     def __repr__(self) -> str:
         return (
             "MoveFunctionalGroupMolGraph("
-            f"{self.bridge_atom1}, {self.bridge_atom2}, {self.new_link_idx})"
+            f"{self.molecule}, {self.bridge_atom1}, "
+            f"{self.bridge_atom2}, {self.new_link_idx})"
         )
 
-
-class ActionSpaceMoveFunctionalGroupMolGraph(ActionSpace):
-    """
-    List possible actions on molecular graphs to move a functional group.
-    """
-
     @override
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    @classmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List possible actions to move a functional group in the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
@@ -126,6 +124,8 @@ class ActionSpaceMoveFunctionalGroupMolGraph(ActionSpace):
                     free_electrons_vector[k] >= bond_type_num
                     and formal_charge_vector[k] == 0
                 ):
-                    action_list.append(MoveFunctionalGroupMolGraph(atom1, atom2, k))
+                    action_list.append(
+                        MoveFunctionalGroupMolGraph(molecule, atom1, atom2, k)
+                    )
 
         return action_list

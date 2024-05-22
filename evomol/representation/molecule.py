@@ -37,7 +37,7 @@ def max_valence(atom: str) -> int:
 
 
 def pprint_action_space(
-    action_list: dict[MoleculeRepresentation, dict[ActionSpace, list[Action]]],
+    action_list: dict[MoleculeRepresentation, dict[str, list[Action]]],
 ) -> None:
     """Pretty print the action space of a molecule."""
     nb_actions = 0
@@ -54,6 +54,22 @@ def pprint_action_space(
     print(f"Nb actions: {nb_actions}")
 
 
+class ActionContext(ABC):
+    """
+    Context of an action.
+
+    The context is used to define the environment in which the action is
+    applied.
+    """
+
+    def __init__(self, molecule: Molecule) -> None:
+        self.molecule: Molecule = molecule
+
+    @abstractmethod
+    def get(self) -> object:
+        """Return the context of the action."""
+
+
 class Action(ABC):
     """
     Action to apply to a molecule representation.
@@ -62,21 +78,20 @@ class Action(ABC):
     action to it.
     """
 
-    @abstractmethod
-    def apply(self, molecule: Molecule) -> Molecule:
-        """Apply the action to the molecule"""
-
-
-class ActionSpace(ABC):
-    """
-    List all possible actions within a neighborhood of a molecule representation.
-    """
+    def __init__(self, molecule: Molecule) -> None:
+        self.molecule: Molecule = molecule
 
     @abstractmethod
-    def list_actions(self, molecule: Molecule) -> list[Action]:
+    def apply(self) -> Molecule:
+        """Apply the action"""
+
+    @classmethod
+    @abstractmethod
+    def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List all possible actions for the molecule"""
 
-    def __repr__(self) -> str:
+    def class_name(self) -> str:
+        """Return the class name of the action."""
         return self.__class__.__name__
 
 
@@ -94,40 +109,40 @@ class MoleculeRepresentation(ABC):
     To set the possible neighbors :
         YourMoleculeRepresentationClass.set_action_spaces(
             [
-                ActionSpace1(),
-                ActionSpace2(),
+                Action1,
+                Action2,
                 ...,
             ]
         )
 
         # or
         YourMoleculeRepresentationClass.action_space = [
-            ActionSpace1(),
-            ActionSpace2(),
+            Action1,
+            Action2,
             ...,
         ]
 
     """
 
     # possible action space for the molecule representation
-    action_space: ClassVar[list[ActionSpace]]
+    action_space: ClassVar[list[Action]]
 
     def __init__(self, str_id: str):
         """init the molecule representation from a string."""
         self.str_id: str = str_id
 
     @classmethod
-    def set_action_spaces(cls, action_space: list[ActionSpace]) -> None:
+    def set_action_spaces(cls, action_space: list[Action]) -> None:
         """Set the possible action space for the molecule representation."""
         cls.action_space = action_space
 
-    def list_all_actions(self, molecule: Molecule) -> dict[ActionSpace, list[Action]]:
+    def list_all_actions(self, molecule: Molecule) -> dict[Action, list[Action]]:
         """
-        List all possible Action for each ActionSpace of the molecule representation
+        List all possible Action for each Action of the molecule representation
         """
         return {
-            action_space: action_space.list_actions(molecule)
-            for action_space in self.action_space
+            action.class_name(): action.list_actions(molecule)
+            for action in self.action_space
         }
 
     @abstractmethod
@@ -138,6 +153,10 @@ class MoleculeRepresentation(ABC):
     def __repr__(self) -> str:
         return self.__class__.__name__
 
+    def class_name(self) -> str:
+        """Return the class name of the representation."""
+        return self.__class__.__name__
+
     def __str__(self) -> str:
         return self.representation()
 
@@ -145,7 +164,7 @@ class MoleculeRepresentation(ABC):
 TypeMoleculeRepresentation = TypeVar(
     "TypeMoleculeRepresentation", bound=MoleculeRepresentation
 )
-TypeActionSpace = TypeVar("TypeActionSpace", bound=ActionSpace)
+TypeAction = TypeVar("TypeAction", bound=Action)
 
 
 class Molecule:
@@ -161,6 +180,7 @@ class Molecule:
     id_representation_class: type[MoleculeRepresentation]
     representations_class: list[type[MoleculeRepresentation]]
     max_heavy_atoms: int
+    accepted_atoms: list[str]
 
     def __init__(self, str_id: str):
         """init the molecule from a string and create its various representations.
@@ -176,19 +196,15 @@ class Molecule:
             for representation_class in Molecule.representations_class
         ]
 
-    def list_available_actions_space(
-        self,
-    ) -> dict[MoleculeRepresentation, list[ActionSpace]]:
+    def list_available_actions_space(self) -> dict[str, list[Action]]:
         """List all available actions space for each representation."""
         return {
-            representation: representation.action_space
+            representation.class_name(): representation.action_space
             for representation in self.representations
             if representation.action_space
         }
 
-    def list_all_possible_actions(
-        self,
-    ) -> dict[MoleculeRepresentation, dict[ActionSpace, list[Action]]]:
+    def list_all_possible_actions(self) -> dict[str, dict[Action, list[Action]]]:
         """List all possible actions for the molecule."""
         # make sure that the possible action is not empty
         possible_actions = {}
@@ -199,7 +215,7 @@ class Molecule:
                 if list_actions:
                     current_actions[action_space] = list_actions
             if current_actions:
-                possible_actions[representation] = current_actions
+                possible_actions[representation.class_name()] = current_actions
         return possible_actions
 
         # return {
@@ -223,8 +239,8 @@ class Molecule:
     def get_action_space(
         cls,
         representation_class: type[TypeMoleculeRepresentation],
-        action_space_class: type[TypeActionSpace],
-    ) -> TypeActionSpace:
+        action_space_class: type[TypeAction],
+    ) -> TypeAction:
         """Return the action space for the given representation class."""
         for representation in cls.representations_class:
             if representation == representation_class:
