@@ -3,6 +3,7 @@ Insert a carbon in the molecular graph between two atoms that have no formal cha
 """
 
 import itertools
+from copy import copy
 
 from typing_extensions import override
 
@@ -32,7 +33,7 @@ class InsertCarbonMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         # Removing bond between atoms
         new_mol_graph.set_bond(self.atom1_idx_to_bond, self.atom2_idx_to_bond, 0)

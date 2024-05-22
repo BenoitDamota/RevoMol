@@ -8,7 +8,7 @@ The following page can be useful :
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import ClassVar, TypeVar
+from typing import ClassVar, TypeVar, Type
 
 from rdkit import Chem
 
@@ -37,7 +37,7 @@ def max_valence(atom: str) -> int:
 
 
 def pprint_action_space(
-    action_list: dict[MoleculeRepresentation, dict[str, list[Action]]],
+    action_list: dict[str, dict[str, list[Action]]],
 ) -> None:
     """Pretty print the action space of a molecule."""
     nb_actions = 0
@@ -90,9 +90,13 @@ class Action(ABC):
     def list_actions(cls, molecule: Molecule) -> list[Action]:
         """List all possible actions for the molecule"""
 
-    def class_name(self) -> str:
+    @classmethod
+    def class_name(cls) -> str:
         """Return the class name of the action."""
-        return self.__class__.__name__
+        return cls.__name__
+
+
+# TypeAction = TypeVar("TypeAction", bound=Action)
 
 
 class MoleculeRepresentation(ABC):
@@ -125,18 +129,18 @@ class MoleculeRepresentation(ABC):
     """
 
     # possible action space for the molecule representation
-    action_space: ClassVar[list[Action]]
+    action_space: ClassVar[list[Type[Action]]]
 
     def __init__(self, str_id: str):
         """init the molecule representation from a string."""
         self.str_id: str = str_id
 
     @classmethod
-    def set_action_spaces(cls, action_space: list[Action]) -> None:
+    def set_action_spaces(cls, action_space: list[Type[Action]]) -> None:
         """Set the possible action space for the molecule representation."""
         cls.action_space = action_space
 
-    def list_all_actions(self, molecule: Molecule) -> dict[Action, list[Action]]:
+    def list_all_actions(self, molecule: Molecule) -> dict[str, list[Action]]:
         """
         List all possible Action for each Action of the molecule representation
         """
@@ -151,11 +155,12 @@ class MoleculeRepresentation(ABC):
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return self.__class__.__name__
+        return self.__name__
 
+    @classmethod
     def class_name(self) -> str:
         """Return the class name of the representation."""
-        return self.__class__.__name__
+        return self.__name__
 
     def __str__(self) -> str:
         return self.representation()
@@ -164,7 +169,6 @@ class MoleculeRepresentation(ABC):
 TypeMoleculeRepresentation = TypeVar(
     "TypeMoleculeRepresentation", bound=MoleculeRepresentation
 )
-TypeAction = TypeVar("TypeAction", bound=Action)
 
 
 class Molecule:
@@ -180,7 +184,7 @@ class Molecule:
     id_representation_class: type[MoleculeRepresentation]
     representations_class: list[type[MoleculeRepresentation]]
     max_heavy_atoms: int
-    accepted_atoms: list[str]
+    accepted_atoms: list[str] = ["C", "O", "N", "F"]
 
     def __init__(self, str_id: str):
         """init the molecule from a string and create its various representations.
@@ -196,7 +200,7 @@ class Molecule:
             for representation_class in Molecule.representations_class
         ]
 
-    def list_available_actions_space(self) -> dict[str, list[Action]]:
+    def list_available_actions_space(self) -> dict[str, list[Type[Action]]]:
         """List all available actions space for each representation."""
         return {
             representation.class_name(): representation.action_space
@@ -204,16 +208,16 @@ class Molecule:
             if representation.action_space
         }
 
-    def list_all_possible_actions(self) -> dict[str, dict[Action, list[Action]]]:
+    def list_all_possible_actions(self) -> dict[str, dict[str, list[Action]]]:
         """List all possible actions for the molecule."""
         # make sure that the possible action is not empty
         possible_actions = {}
         for representation in self.representations:
             current_actions = {}
-            for action_space in representation.action_space:
-                list_actions = action_space.list_actions(self)
+            for action in representation.action_space:
+                list_actions = action.list_actions(self)
                 if list_actions:
-                    current_actions[action_space] = list_actions
+                    current_actions[action.class_name()] = list_actions
             if current_actions:
                 possible_actions[representation.class_name()] = current_actions
         return possible_actions
@@ -227,25 +231,25 @@ class Molecule:
         # }
 
     def get_representation(
-        self, representation_class: type[TypeMoleculeRepresentation]
+        self, representation_class: Type[TypeMoleculeRepresentation]
     ) -> TypeMoleculeRepresentation:
         """Return the representation of the molecule for the given class."""
         for representation in self.representations:
-            if isinstance(representation, representation_class):
+            if type(representation) is representation_class:
                 return representation
         raise ValueError(f"No representation found for {representation_class}")
 
     @classmethod
     def get_action_space(
         cls,
-        representation_class: type[TypeMoleculeRepresentation],
-        action_space_class: type[TypeAction],
-    ) -> TypeAction:
+        representation_class: Type[MoleculeRepresentation],
+        action_space_class: Type[Action],
+    ) -> Type[Action]:
         """Return the action space for the given representation class."""
         for representation in cls.representations_class:
             if representation == representation_class:
                 for action_space in representation.action_space:
-                    if isinstance(action_space, action_space_class):
+                    if action_space is action_space_class:
                         return action_space
         raise ValueError(
             f"No action space found for {action_space_class} in {representation_class}"

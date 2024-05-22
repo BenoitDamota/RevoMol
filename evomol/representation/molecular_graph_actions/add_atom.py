@@ -2,6 +2,8 @@
 Add an atom to a molecular graph.
 """
 
+from copy import copy
+
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
@@ -24,7 +26,7 @@ class AddAtomMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         # Adding the atom
         new_mol_graph.add_atom(self.atom_type)
@@ -63,17 +65,14 @@ class AddAtomMolGraph(Action):
                 for atom_type in Molecule.accepted_atoms
             ]
 
-        # otherwise, we have to check the free electrons and the formal charge
+        # otherwise, for each atom, if the implicit valence is greater than 0
+        # an action can be performed for each possible atom type
 
-        free_electrons_vector = mol_graph.free_electrons_vector()
-        formal_charge_vector = mol_graph.formal_charge_vector()
+        implicit_valence_vector = mol_graph.implicit_valence_vector()
 
-        # the new atom can be bonded to an existing atom if it has free
-        # electrons and has no formal charge
         return [
             AddAtomMolGraph(molecule, atom_idx, atom_type)
             for atom_idx in range(mol_graph.nb_atoms)
-            if free_electrons_vector[atom_idx] > 0
-            and formal_charge_vector[atom_idx] == 0
+            if implicit_valence_vector[atom_idx] > 0
             for atom_type in Molecule.accepted_atoms
         ]

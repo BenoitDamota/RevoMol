@@ -109,13 +109,17 @@ class MolecularGraph(MoleculeRepresentation):
         return adjacency_matrix
 
     def __copy__(self) -> MolecularGraph:
-        mol = MolecularGraph(self.canonical_smiles, self.sanitize, self.mutability)
+        mol = MolecularGraph("", self.sanitize, self.mutability)
+        mol.mol = Chem.RWMol(self.mol, True)
+        mol.update_representation()
+        mol.smiles = Chem.MolToSmiles(mol.mol)
         return mol
 
     def atom_mutability(self, atom_idx: int) -> bool:
         """Return the mutability of the atom at the given index."""
-        atom_mutability: bool = self.mol.GetAtomWithIdx(atom_idx).GetBoolProp(
-            "mutability"
+        atom = self.mol.GetAtomWithIdx(atom_idx)
+        atom_mutability: bool = (
+            atom.GetBoolProp("mutability") and not atom.GetNoImplicit()
         )
         return atom_mutability
 
@@ -268,27 +272,6 @@ class MolecularGraph(MoleculeRepresentation):
         degree: int = self.mol.GetAtomWithIdx(atom_idx).GetDegree()
         return degree
 
-    def formal_charge_vector(self) -> list[int]:
-        """Return the formal charge of each atom in the molecule.
-
-        Returns:
-            list[int]: formal charge of each atom in the molecule
-        """
-        return [
-            self.mol.GetAtomWithIdx(atom_idx).GetFormalCharge()
-            for atom_idx in range(self.nb_atoms)
-        ]
-
-    def free_electrons_vector(self) -> npt.NDArray[np.int32]:
-        """Return the number of free electrons of each atom in the molecule.
-
-        Returns:
-            np.ndarray[int]: number of free electrons of each atom in the molecule
-        """
-        return np.array(
-            [self._nb_free_electrons(atom_idx) for atom_idx in range(self.nb_atoms)]
-        )
-
     def atom_type(self, atom_idx: int) -> str:
         """Return the atom type of the atom at the given index.
 
@@ -319,6 +302,37 @@ class MolecularGraph(MoleculeRepresentation):
             return 0
         return int(bond.GetBondType())
 
+    def formal_charge_vector(self) -> list[int]:
+        """Return the formal charge of each atom in the molecule.
+
+        Returns:
+            list[int]: formal charge of each atom in the molecule
+        """
+        return [
+            self.mol.GetAtomWithIdx(atom_idx).GetFormalCharge()
+            for atom_idx in range(self.nb_atoms)
+        ]
+
+    def explicit_valence_vector(self) -> npt.NDArray[np.int32]:
+        """Return the explicit valence of each atom in the molecule.
+
+        Returns:
+            np.ndarray[int]: explicit valence of each atom in the molecule
+        """
+        return np.array(
+            [self._explicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
+        )
+
+    def implicit_valence_vector(self) -> npt.NDArray[np.int32]:
+        """Return the implicit valence of each atom in the molecule.
+
+        Returns:
+            np.ndarray[int]: implicit valence of each atom in the molecule
+        """
+        return np.array(
+            [self._implicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
+        )
+
     def _explicit_valence(self, atom_idx: int) -> int:
         """Return the explicit valence of the atom at the given index.
 
@@ -334,33 +348,25 @@ class MolecularGraph(MoleculeRepresentation):
         valence: int = atom.GetExplicitValence()
         return valence
 
-    def _nb_free_electrons(self, atom_idx: int) -> int:
-        """Return the number of free electrons of the atom at the given index.
+    def _implicit_valence(self, atom_idx: int) -> int:
+        """Return the implicit valence of the atom at the given index.
 
         Args:
             atom_idx (int):
                 atom index
 
         Returns:
-            int: number of free electrons of the atom at the given index
+            int: implicit valence of the atom at the given index
         """
-        return max_valence(
-            self.mol.GetAtomWithIdx(atom_idx).GetSymbol()
-        ) - self._explicit_valence(atom_idx)
+        atom = self.mol.GetAtomWithIdx(atom_idx)
+        atom.UpdatePropertyCache()
+        valence: int = atom.GetImplicitValence()
+        if atom.GetSymbol() == "S":
+            total_valence: int = atom.GetTotalValence()
+            if total_valence in (2, 4):
+                valence += 2
+        return valence
 
-    def _is_new_bond_possible(self, atom1_idx: int, atom2_idx: int) -> bool:
-        """Return whether a new bond between the two atoms is possible.
-
-        Args:
-            atom1_idx (int):
-                index of the first atom
-            atom2_idx (int):
-                index of the second atom
-
-        Returns:
-            bool: whether a new bond between the two atoms is possible
-        """
-        return (
-            min(self._nb_free_electrons(atom1_idx), self._nb_free_electrons(atom2_idx))
-            > 0
-        )
+    def atoms(self) -> list[str]:
+        """Return the list of atoms in the molecule."""
+        return [atom.GetSymbol() for atom in self.mol.GetAtoms()]

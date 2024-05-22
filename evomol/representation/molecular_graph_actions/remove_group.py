@@ -2,6 +2,7 @@
 Remove a group of connected atoms from the molecular graph.
 """
 
+from copy import copy
 import itertools
 
 import networkx as nx
@@ -58,7 +59,7 @@ class RemoveGroupMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         atom_to_remove = connected_component_after_removing_bond(
             mol_graph.adjacency_matrix,

@@ -2,6 +2,8 @@
 Remove an atom from the molecular graph.
 """
 
+from copy import copy
+
 import networkx as nx
 from typing_extensions import override
 
@@ -23,7 +25,7 @@ class RemoveAtomMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         # Removing the atom
         new_mol_graph.remove_atom(self.atom_idx)

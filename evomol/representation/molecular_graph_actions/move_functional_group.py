@@ -3,6 +3,7 @@ Move a functional group in a molecular graph.
 """
 
 import itertools
+from copy import copy
 
 import networkx as nx
 from typing_extensions import override
@@ -34,7 +35,7 @@ class MoveFunctionalGroupMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         # compute imputed adjacency matrix
         imputed_adjacency_matrix = mol_graph.adjacency_matrix
@@ -92,9 +93,9 @@ class MoveFunctionalGroupMolGraph(Action):
 
         action_list: list[Action] = []
 
-        # Extraction of the bridge matrix and free electrons vector
+        # Extraction of the bridge matrix and implicit valence vector
         bridge_bond_matrix = mol_graph.bridge_bonds_matrix()
-        free_electrons_vector = mol_graph.free_electrons_vector()
+        implicit_valence_vector = mol_graph.implicit_valence_vector()
         formal_charge_vector = mol_graph.formal_charge_vector()
 
         # for each bond
@@ -121,7 +122,7 @@ class MoveFunctionalGroupMolGraph(Action):
                 # the functional group can be moved if the current atom has
                 # enough electrons left and has no formal charge
                 if (
-                    free_electrons_vector[k] >= bond_type_num
+                    implicit_valence_vector[k] >= bond_type_num
                     and formal_charge_vector[k] == 0
                 ):
                     action_list.append(

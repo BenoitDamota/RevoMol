@@ -2,6 +2,7 @@
 Change bond for molecular graph representation.
 """
 
+from copy import copy
 import itertools
 
 from typing_extensions import override
@@ -16,7 +17,7 @@ class ChangeBondMolGraph(Action):
 
     """
 
-    avoid_break_bond: bool = False
+    avoid_bond_breaking: bool = False
 
     def __init__(
         self,
@@ -34,7 +35,7 @@ class ChangeBondMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         new_mol_graph.set_bond(self.atom1, self.atom2, self.bond_type)
 
@@ -61,22 +62,27 @@ class ChangeBondMolGraph(Action):
 
         action_list: list[Action] = []
 
-        free_electrons = mol_graph.free_electrons_vector()
-        formal_charges = mol_graph.formal_charge_vector()
+        implicit_valence_vector = mol_graph.implicit_valence_vector()
         bridge_bond_matrix = mol_graph.bridge_bonds_matrix()
 
         # for each bond
         for atom1, atom2 in itertools.combinations(range(mol_graph.nb_atoms), 2):
-            current_bond = mol_graph.bond_type_num(atom1, atom2)
+            current_bond: int = mol_graph.bond_type_num(atom1, atom2)
 
-            mutability_ok = mol_graph.atom_mutability(
+            # the max bond that can be formed between atom1 and atom2
+            # is the minimum of the implicit valence of the two atoms
+            # plus the current bond
+            max_bond: int = (
+                min(implicit_valence_vector[atom1], implicit_valence_vector[atom2])
+                + current_bond
+            )
+
+            mutability_ok: bool = mol_graph.atom_mutability(
                 atom1
-            ) or mol_graph.atom_mutability(atom2)
+            ) and mol_graph.atom_mutability(atom2)
 
-            # Bond involving atoms with formal charges cannot be changed
-            formal_charge_ok = formal_charges[atom1] == 0 and formal_charges[atom2] == 0
-
-            if not mutability_ok or not formal_charge_ok:
+            # if not mutability_ok or not formal_charge_ok:
+            if not mutability_ok:
                 continue
 
             # for each bond type
@@ -91,21 +97,18 @@ class ChangeBondMolGraph(Action):
                 if new_bond < current_bond:
                     if new_bond > 0 or (
                         not bridge_bond_matrix[atom1][atom2]
-                        and not cls.avoid_break_bond
+                        and not cls.avoid_bond_breaking
                     ):
                         action_list.append(
                             ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
                         )
 
                 # Bond increment
-                # delta = new_bond - current_bond
-                # Bond can be incremented of delta if each atom involved has at
-                # least delta free electrons
-                else:
-                    delta = new_bond - current_bond
-                    if min(free_electrons[atom1], free_electrons[atom2]) >= delta:
-                        action_list.append(
-                            ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
-                        )
+                # Bond can be incremented only if the new bond is less than
+                # the maximum bond that can be formed between the two atoms
+                elif max_bond >= new_bond:
+                    action_list.append(
+                        ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
+                    )
 
         return action_list

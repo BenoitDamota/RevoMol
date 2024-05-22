@@ -2,6 +2,8 @@
 Example of a molecular graph action.
 """
 
+from copy import copy
+
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
@@ -20,7 +22,7 @@ class XXXMolGraph(Action):
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
-        new_mol_graph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
 
         try:
             new_mol_graph.update_representation()

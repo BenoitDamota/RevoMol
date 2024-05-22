@@ -7,6 +7,17 @@ from typing_extensions import override
 from evomol.representation.molecule import MoleculeRepresentation
 
 
+def link(uri, label=None):
+    if label is None:
+        label = uri
+    parameters = ""
+
+    # OSC 8 ; params ; URI ST <name> OSC 8 ;; ST
+    escape_mask = "\033]8;{};{}\033\\{}\033]8;;\033\\"
+
+    return escape_mask.format(parameters, uri, label)
+
+
 class SMILES(MoleculeRepresentation):
     """Molecule representation using SMILES string."""
 
@@ -26,7 +37,9 @@ class SMILES(MoleculeRepresentation):
 
     @override
     def representation(self) -> str:
-        return self.smiles
+        return (
+            f"{link('http://hulab.rxnfinder.org/smi2img/' + self.smiles, self.smiles)}"
+        )
 
     def __repr__(self) -> str:
         return f"SMILES({self.smiles})"

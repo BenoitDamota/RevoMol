@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 
 from evomol.representation.molecule import (
     Action,
-    ActionSpace,
     Molecule,
     MoleculeRepresentation,
     pprint_action_space,
@@ -38,9 +37,9 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
         for depth in range(self.depth):
             print(f"Depth: {depth}")
             # list all possible actions
-            possible_actions: dict[
-                MoleculeRepresentation, dict[ActionSpace, list[Action]]
-            ] = new_molecule.list_all_possible_actions()
+            possible_actions: dict[str, dict[str, list[Action]]] = (
+                new_molecule.list_all_possible_actions()
+            )
 
             if not possible_actions:
                 raise ValueError("No possible actions")
@@ -48,12 +47,10 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
             pprint_action_space(possible_actions)
 
             # select a random representation
-            representation: MoleculeRepresentation = random.choice(
-                list(possible_actions.keys())
-            )
+            representation: str = random.choice(list(possible_actions.keys()))
 
             # select a random action space
-            action_space: ActionSpace = random.choice(
+            action_space: str = random.choice(
                 list(possible_actions[representation].keys())
             )
 
@@ -62,8 +59,8 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
                 possible_actions[representation][action_space]
             )
 
-            print(f"Applying action: {action} to {new_molecule}")
-            new_molecule = action.apply(new_molecule)
+            print(f"Applying action: {action}")
+            new_molecule = action.apply()
             print(f"New molecule: {new_molecule}")
 
         return new_molecule

@@ -2,6 +2,7 @@
 Cut an atom from the molecular graph.
 """
 
+from copy import copy
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
@@ -19,6 +20,7 @@ class CutAtomMolGraph(Action):
         atom_to_cut: int,
         atom1_to_bond: int,
         atom2_to_bond: int,
+        bond_type: int,
     ):
         super().__init__(molecule)
         # index of the atom to cut
@@ -26,19 +28,21 @@ class CutAtomMolGraph(Action):
         # index of the atom to bond to the new atom
         self.atom1_to_bond: int = atom1_to_bond
         self.atom2_to_bond: int = atom2_to_bond
+        self.bond_type: int = bond_type
 
     @override
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
 
-        new_mol_graph: MolecularGraph = MolecularGraph(mol_graph.smiles)
+        new_mol_graph: MolecularGraph = copy(mol_graph)
+
         # remove bonds
         new_mol_graph.set_bond(self.atom_to_cut, self.atom1_to_bond, 0)
         new_mol_graph.set_bond(self.atom_to_cut, self.atom2_to_bond, 0)
 
         # create new bond
-        new_mol_graph.set_bond(self.atom1_to_bond, self.atom2_to_bond, 1)
+        new_mol_graph.set_bond(self.atom1_to_bond, self.atom2_to_bond, self.bond_type)
 
         new_mol_graph.remove_atom(self.atom_to_cut)
 
@@ -53,8 +57,8 @@ class CutAtomMolGraph(Action):
     def __repr__(self) -> str:
         return (
             "CutAtomMolGraph("
-            f"{self.molecule},{self.atom_to_cut}, "
-            f"{self.atom1_to_bond}, {self.atom2_to_bond})"
+            f"{self.molecule}, {self.atom_to_cut}, "
+            f"{self.atom1_to_bond}, {self.atom2_to_bond}, {self.bond_type})"
         )
 
     @override
@@ -71,6 +75,19 @@ class CutAtomMolGraph(Action):
         for atom_to_cut in range(mol_graph.nb_atoms):
             # we cannot cut a non mutable atom
             if not mol_graph.atom_mutability(atom_to_cut):
+                # print(f"{atom_to_cut=}")
+                # print(mol_graph.atoms())
+                # print(mol_graph.canonical_smiles)
+                # print(mol_graph.atom_mutability(atom_to_cut))
+                # atom = mol_graph.mol.GetAtomWithIdx(atom_to_cut)
+                # print(
+                #     atom.GetSymbol(),
+                #     atom.GetFormalCharge(),
+                #     atom.GetImplicitValence(),
+                #     atom.GetNoImplicit(),
+                #     atom.GetNumRadicalElectrons(),
+                #     atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
+                # )
                 continue
 
             # if there is two atoms bonded to the atom to cut
@@ -82,17 +99,66 @@ class CutAtomMolGraph(Action):
             if len(bonds_to) != 2:
                 continue
 
-            # check if the two atoms bonded to the atom to cut are not connected
-            # and have no formal charge
-            if (
-                mol_graph.bond_type_num(bonds_to[0], bonds_to[1]) != 0
-                or formal_charges[bonds_to[0]] != 0
-                or formal_charges[bonds_to[1]] != 0
-            ):
+            atom_1 = bonds_to[0]
+            atom_2 = bonds_to[1]
+
+            if mol_graph.bond_type_num(atom_1, atom_2) != 0:
                 continue
 
+            # atom_1 to atom_to_cut
+            bond_1 = mol_graph.bond_type_num(atom_to_cut, atom_1)
+
+            # atom_2 to atom_to_cut
+            bond_2 = mol_graph.bond_type_num(atom_to_cut, atom_2)
+
+            mutability_1 = mol_graph.atom_mutability(atom_1)
+            mutability_2 = mol_graph.atom_mutability(atom_2)
+
+            if not mutability_1 and not mutability_2:
+                if bond_1 != bond_2:
+                    continue
+                print(
+                    f"1 - {atom_to_cut=} ({mol_graph.atom_type(atom_to_cut)}) connect {atom_1=} ({mol_graph.atom_type(atom_1)}) and {atom_2=} ({mol_graph.atom_type(atom_2)}) with {bond_1}"
+                )
+                action_list.append(
+                    CutAtomMolGraph(
+                        molecule, atom_to_cut, bonds_to[0], bonds_to[1], bond_1
+                    )
+                )
+                continue
+
+            max_valence_1 = mol_graph.implicit_valence_vector()[atom_1] + bond_1
+            max_valence_2 = mol_graph.implicit_valence_vector()[atom_2] + bond_2
+            if not mutability_1 and max_valence_2 >= bond_1:
+                print(
+                    f"2 - {atom_to_cut=} ({mol_graph.atom_type(atom_to_cut)}) connect {atom_1=} ({mol_graph.atom_type(atom_1)}) and {atom_2=} ({mol_graph.atom_type(atom_2)}) with {bond_1}"
+                )
+                action_list.append(
+                    CutAtomMolGraph(
+                        molecule, atom_to_cut, bonds_to[0], bonds_to[1], bond_1
+                    )
+                )
+                continue
+
+            if not mutability_2 and max_valence_1 >= bond_2:
+                print(
+                    f"3 - {atom_to_cut=} ({mol_graph.atom_type(atom_to_cut)}) connect {atom_1=} ({mol_graph.atom_type(atom_1)}) and {atom_2=} ({mol_graph.atom_type(atom_2)}) with {bond_2}"
+                )
+                action_list.append(
+                    CutAtomMolGraph(
+                        molecule, atom_to_cut, bonds_to[0], bonds_to[1], bond_2
+                    )
+                )
+                continue
+
+            if not mutability_1 or not mutability_2:
+                continue
+
+            print(
+                f"4 - {atom_to_cut=} ({mol_graph.atom_type(atom_to_cut)}) connect {atom_1=} ({mol_graph.atom_type(atom_1)}) and {atom_2=} ({mol_graph.atom_type(atom_2)}) with 1"
+            )
             action_list.append(
-                CutAtomMolGraph(molecule, atom_to_cut, bonds_to[0], bonds_to[1])
+                CutAtomMolGraph(molecule, atom_to_cut, bonds_to[0], bonds_to[1], 1)
             )
 
         return action_list
