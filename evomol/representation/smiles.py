@@ -7,8 +7,9 @@ from typing_extensions import override
 from evomol.representation.molecule import MoleculeRepresentation
 
 
-def link(uri, label=None):
-    if label is None:
+def link(uri: str, label: str = "") -> str:
+    """Create a hyperlink in the terminal."""
+    if not label:
         label = uri
     parameters = ""
 
@@ -33,13 +34,18 @@ class SMILES(MoleculeRepresentation):
     @classmethod
     def set_generic_action_space(cls) -> None:
         """Set the generic action space for the SMILES representation."""
-        cls.set_action_spaces([])
+        cls.set_action_space([])
 
     @override
     def representation(self) -> str:
         return (
             f"{link('http://hulab.rxnfinder.org/smi2img/' + self.smiles, self.smiles)}"
+            if self.smiles
+            else "Empty SMILES"
         )
 
     def __repr__(self) -> str:
-        return f"SMILES({self.smiles})"
+        return f'SMILES("{self.representation()}")'
+
+    def __eq__(self, value: object) -> bool:
+        return isinstance(value, SMILES) and self.smiles == value.smiles

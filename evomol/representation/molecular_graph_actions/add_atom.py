@@ -41,7 +41,7 @@ class AddAtomMolGraph(Action):
             print("Addition caused an error.")
             raise e
 
-        return Molecule(new_mol_graph.canonical_smiles)
+        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return f"AddAtomMolGraph({self.molecule}, {self.index_atom}, {self.atom_type})"
@@ -68,11 +68,11 @@ class AddAtomMolGraph(Action):
         # otherwise, for each atom, if the implicit valence is greater than 0
         # an action can be performed for each possible atom type
 
-        implicit_valence_vector = mol_graph.implicit_valence_vector()
+        implicit_valences = mol_graph.implicit_valences
 
         return [
             AddAtomMolGraph(molecule, atom_idx, atom_type)
             for atom_idx in range(mol_graph.nb_atoms)
-            if implicit_valence_vector[atom_idx] > 0
+            if implicit_valences[atom_idx] > 0
             for atom_type in Molecule.accepted_atoms
         ]

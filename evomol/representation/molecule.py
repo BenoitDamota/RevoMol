@@ -129,14 +129,14 @@ class MoleculeRepresentation(ABC):
     """
 
     # possible action space for the molecule representation
-    action_space: ClassVar[list[Type[Action]]]
+    action_space: ClassVar[list[Type[Action]]] = []
 
     def __init__(self, str_id: str):
         """init the molecule representation from a string."""
         self.str_id: str = str_id
 
     @classmethod
-    def set_action_spaces(cls, action_space: list[Type[Action]]) -> None:
+    def set_action_space(cls, action_space: list[Type[Action]]) -> None:
         """Set the possible action space for the molecule representation."""
         cls.action_space = action_space
 
@@ -149,21 +149,30 @@ class MoleculeRepresentation(ABC):
             for action in self.action_space
         }
 
+    @classmethod
+    def list_action_spaces(cls) -> list[Type[Action]]:
+        """List all possible actions for the molecule representation."""
+        return cls.action_space
+
     @abstractmethod
     def representation(self) -> str:
         """String used to identify the molecule with this representation"""
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return self.__name__
+        return MoleculeRepresentation.__name__
 
     @classmethod
-    def class_name(self) -> str:
+    def class_name(cls) -> str:
         """Return the class name of the representation."""
-        return self.__name__
+        return cls.__name__
 
     def __str__(self) -> str:
         return self.representation()
+
+    @abstractmethod
+    def __eq__(self, value: object) -> bool:
+        raise NotImplementedError
 
 
 TypeMoleculeRepresentation = TypeVar(
@@ -183,7 +192,7 @@ class Molecule:
 
     id_representation_class: type[MoleculeRepresentation]
     representations_class: list[type[MoleculeRepresentation]]
-    max_heavy_atoms: int
+    max_heavy_atoms: int = 38
     accepted_atoms: list[str] = ["C", "O", "N", "F"]
 
     def __init__(self, str_id: str):
@@ -235,31 +244,27 @@ class Molecule:
     ) -> TypeMoleculeRepresentation:
         """Return the representation of the molecule for the given class."""
         for representation in self.representations:
-            if type(representation) is representation_class:
+            if isinstance(representation, representation_class):
                 return representation
         raise ValueError(f"No representation found for {representation_class}")
 
     @classmethod
-    def get_action_space(
-        cls,
-        representation_class: Type[MoleculeRepresentation],
-        action_space_class: Type[Action],
-    ) -> Type[Action]:
-        """Return the action space for the given representation class."""
-        for representation in cls.representations_class:
-            if representation == representation_class:
-                for action_space in representation.action_space:
-                    if action_space is action_space_class:
-                        return action_space
-        raise ValueError(
-            f"No action space found for {action_space_class} in {representation_class}"
-        )
+    def list_representation_classes(cls) -> list[type[MoleculeRepresentation]]:
+        """List all possible representations for the molecule."""
+        return cls.representations_class
 
     def __repr__(self) -> str:
         return repr(self.id_representation)
 
     def __str__(self) -> str:
         return str(self.id_representation)
+
+    def __eq__(self, value: object) -> bool:
+        return (
+            isinstance(value, Molecule)
+            and self.id_representation == value.id_representation
+            and self.representations == value.representations
+        )
 
 
 # voir pour faire des tests avec des neighborhood strategies et appliquer k actions

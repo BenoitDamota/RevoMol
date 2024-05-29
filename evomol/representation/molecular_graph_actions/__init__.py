@@ -14,8 +14,8 @@ from .cut_atom import (
 from .insert_carbon import (
     InsertCarbonMolGraph as InsertCarbonMolGraph,
 )
-from .move_functional_group import (
-    MoveFunctionalGroupMolGraph as MoveFunctionalGroupMolGraph,
+from .move_group import (
+    MoveGroupMolGraph as MoveGroupMolGraph,
 )
 from .remove_atom import (
     RemoveAtomMolGraph as RemoveAtomMolGraph,

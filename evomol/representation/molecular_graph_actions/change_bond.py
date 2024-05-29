@@ -45,7 +45,7 @@ class ChangeBondMolGraph(Action):
             print("Change bond caused an error.")
             raise e
 
-        return Molecule(new_mol_graph.canonical_smiles)
+        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (
@@ -62,28 +62,26 @@ class ChangeBondMolGraph(Action):
 
         action_list: list[Action] = []
 
-        implicit_valence_vector = mol_graph.implicit_valence_vector()
-        bridge_bond_matrix = mol_graph.bridge_bonds_matrix()
+        implicit_valences = mol_graph.implicit_valences
+        bridge_bonds_matrix = mol_graph.bridge_bonds_matrix
+
+        mutable: bool = [
+            mol_graph.atom_mutability(atom) for atom in range(mol_graph.nb_atoms)
+        ]
 
         # for each bond
         for atom1, atom2 in itertools.combinations(range(mol_graph.nb_atoms), 2):
+            if not mutable[atom1] or not mutable[atom2]:
+                continue
+
             current_bond: int = mol_graph.bond_type_num(atom1, atom2)
 
             # the max bond that can be formed between atom1 and atom2
             # is the minimum of the implicit valence of the two atoms
             # plus the current bond
             max_bond: int = (
-                min(implicit_valence_vector[atom1], implicit_valence_vector[atom2])
-                + current_bond
+                min(implicit_valences[atom1], implicit_valences[atom2]) + current_bond
             )
-
-            mutability_ok: bool = mol_graph.atom_mutability(
-                atom1
-            ) and mol_graph.atom_mutability(atom2)
-
-            # if not mutability_ok or not formal_charge_ok:
-            if not mutability_ok:
-                continue
 
             # for each bond type
             for new_bond in (0, 1, 2, 3):
@@ -96,7 +94,7 @@ class ChangeBondMolGraph(Action):
                 # mutable
                 if new_bond < current_bond:
                     if new_bond > 0 or (
-                        not bridge_bond_matrix[atom1][atom2]
+                        not bridge_bonds_matrix[atom1][atom2]
                         and not cls.avoid_bond_breaking
                     ):
                         action_list.append(

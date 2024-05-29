@@ -3,15 +3,19 @@ Molecular graph representation of a molecule with RDKit.
 """
 
 from __future__ import annotations
+import io
+import os
 
+from PIL import Image
 import networkx as nx
-import numpy as np
-import numpy.typing as npt
+from typing_extensions import override
 from rdkit import Chem
 from rdkit.Chem import rdchem
-from typing_extensions import override
+from rdkit.Chem.rdDepictor import Compute2DCoords
+from rdkit.Chem import Draw
 
-from evomol.representation.molecule import MoleculeRepresentation, max_valence
+
+from evomol.representation.molecule import MoleculeRepresentation
 
 
 class MolecularGraph(MoleculeRepresentation):
@@ -26,59 +30,41 @@ class MolecularGraph(MoleculeRepresentation):
         mutability: bool = True,
     ):
         super().__init__(smiles)
-        self.mol: rdchem.RWMol = rdchem.RWMol(Chem.MolFromSmiles(smiles))
+        try:
+            self.mol: rdchem.RWMol = rdchem.RWMol(Chem.MolFromSmiles(smiles))
+        except Exception as e:
+            raise ValueError(f"Error with SMILES {smiles}: {e}")
         self.sanitize: bool = sanitize
-        self.mutability = mutability
+        self._mutability = mutability
 
         for atom in self.mol.GetAtoms():
             atom.SetBoolProp("mutability", mutability)
 
-        self.update_representation()
+        # self.update_representation() # TODO remettre
 
-        # @classmethod
-        # def set_generic_action_space(cls, accepted_atoms: list[str]) -> None:
-        # """Set the generic action space for the molecular graph representation."""
-        # from evomol.representation.molecular_graph_actions import (
-        #     AddAtomMolGraph,
-        #     ChangeBondMolGraph,
-        #     CutAtomMolGraph,
-        #     InsertCarbonMolGraph,
-        #     MoveFunctionalGroupMolGraph,
-        #     RemoveAtomMolGraph,
-        #     RemoveGroupMolGraph,
-        #     SubstituteAtomMolGraph,
-        # )
+    def __copy__(self) -> MolecularGraph:
+        mol = MolecularGraph("", self.sanitize, self._mutability)
+        mol.mol = Chem.RWMol(self.mol, True)
+        for i, atom in enumerate(self.mol.GetAtoms()):
+            mol.mol.GetAtomWithIdx(i).SetBoolProp(
+                "mutability", atom.GetBoolProp("mutability")
+            )
+        mol.update_representation()
+        # mol.update_smile()
+        return mol
 
-        # accepted_substitutions: dict[str, list[str]] = {
-        #     accepted_atom: [
-        #         other_accepted_atom
-        #         for other_accepted_atom in accepted_atoms
-        #         if other_accepted_atom not in {accepted_atom, "H"}
-        #     ]
-        #     for accepted_atom in accepted_atoms
-        #     if accepted_atom != "H"
-        # }
-
-        # cls.set_action_spaces(
-        #     [
-        #         AddAtomMolGraph(
-        #             accepted_atoms=accepted_atoms, allow_bonding=False
-        #         ),
-        #         ChangeBondMolGraph(avoid_break_bond=False),
-        #         CutAtomMolGraph(),
-        #         InsertCarbonMolGraph(),
-        #         MoveFunctionalGroupMolGraph(),
-        #         RemoveAtomMolGraph(),
-        #         RemoveGroupMolGraph(only_remove_smallest_group=True),
-        #         SubstituteAtomMolGraph(
-        #             accepted_substitutions=accepted_substitutions
-        #         ),
-        #     ]
-        # )
+    def __eq__(self, value: object) -> bool:
+        return (
+            isinstance(value, MolecularGraph)
+            and self.canonical_smiles == value.canonical_smiles
+        )
 
     @override
     def representation(self) -> str:
         return self.canonical_smiles
+
+    def __repr__(self) -> str:
+        return f"MolecularGraph({self.canonical_smiles})"
 
     @property
     def nb_atoms(self) -> int:
@@ -89,8 +75,12 @@ class MolecularGraph(MoleculeRepresentation):
     @property
     def smiles(self) -> str:
         """Return the SMILES representation of the molecule."""
-        smiles: str = Chem.MolToSmiles(self.mol)
+        smiles: str = Chem.MolToSmiles(self.mol, canonical=False)
         return smiles
+
+    # def update_smile(self) -> None:
+    #     """Update the SMILES representation of the molecule."""
+    #     self.smiles = Chem.MolToSmiles(self.mol)
 
     @property
     def canonical_smiles(self) -> str:
@@ -100,6 +90,22 @@ class MolecularGraph(MoleculeRepresentation):
                 Chem.MolToSmiles(MolecularGraph(Chem.MolToSmiles(self.mol)).mol)
             )
         )
+        # mol = MolecularGraph(Chem.MolToSmiles(self.mol)).mol
+        # print(
+        #     "in canonical_smiles",
+        #     Chem.MolToSmiles(mol),
+        #     " mol to smiles :",
+        #     Chem.MolToSmiles(self.mol),
+        # )
+        # for atom in mol.GetAtoms():
+        #     print(
+        #         atom.GetSymbol(),
+        #         atom.GetFormalCharge(),
+        #         atom.GetImplicitValence(),
+        #         atom.GetNoImplicit(),
+        #         atom.GetNumRadicalElectrons(),
+        #         atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
+        #     )
         return canonic_smiles
 
     @property
@@ -108,33 +114,108 @@ class MolecularGraph(MoleculeRepresentation):
         adjacency_matrix: list[list[int]] = Chem.GetAdjacencyMatrix(self.mol)
         return adjacency_matrix
 
-    def __copy__(self) -> MolecularGraph:
-        mol = MolecularGraph("", self.sanitize, self.mutability)
-        mol.mol = Chem.RWMol(self.mol, True)
-        mol.update_representation()
-        mol.smiles = Chem.MolToSmiles(mol.mol)
-        return mol
+    @property
+    def bonds(self) -> list[tuple[int, int]]:
+        """Return the list of bonds in the molecule."""
+        return [
+            (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
+            for bond in self.mol.GetBonds()
+        ]
+
+    @property
+    def bridge_bonds(self) -> list[tuple[int, int]]:
+        """Return a list of the pairs of atoms in bridge bonds."""
+        return list(nx.bridges(nx.Graph(self.adjacency_matrix)))
+
+    # [
+    #         (atom1, atom2)
+    #         for atom1, atom2 in nx.bridges(nx.Graph(self.adjacency_matrix))
+    #     ]
+
+    @property
+    def bridge_bonds_matrix(self) -> list[list[bool]]:
+        """Return a boolean matrix of size (nb_atoms, nb_atoms)
+        representing whether bonds of the molecule are bridge bonds.
+        """
+        matrix = [[False] * self.nb_atoms for _ in range(self.nb_atoms)]
+
+        for atom1, atom2 in nx.bridges(nx.Graph(self.adjacency_matrix)):
+            matrix[atom1][atom2] = True
+            matrix[atom2][atom1] = True
+
+        return matrix
+
+    @property
+    def atoms(self) -> list[str]:
+        """Return the list of atoms in the molecule."""
+        return [atom.GetSymbol() for atom in self.mol.GetAtoms()]
+
+    @property
+    def formal_charges(self) -> list[int]:
+        """Return the formal charge of each atom in the molecule.
+
+        Returns:
+            list[int]: formal charge of each atom in the molecule
+        """
+        return [
+            self.mol.GetAtomWithIdx(atom_idx).GetFormalCharge()
+            for atom_idx in range(self.nb_atoms)
+        ]
+
+    @property
+    def explicit_valences(self) -> list[int]:
+        """Return the explicit valence of each atom in the molecule."""
+        return [self._explicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
+
+    @property
+    def implicit_valences(self) -> list[int]:
+        """Return the implicit valence of each atom in the molecule."""
+        return [self._implicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
 
     def atom_mutability(self, atom_idx: int) -> bool:
         """Return the mutability of the atom at the given index."""
         atom = self.mol.GetAtomWithIdx(atom_idx)
-        atom_mutability: bool = (
-            atom.GetBoolProp("mutability") and not atom.GetNoImplicit()
-        )
-        return atom_mutability
+        return atom.GetBoolProp("mutability") and not atom.GetNoImplicit()
 
     def set_atom_mutability(self, atom_idx: int, mutability: bool) -> None:
         """Set the mutability of the atom at the given index."""
         self.mol.GetAtomWithIdx(atom_idx).SetBoolProp("mutability", mutability)
 
-    def __repr__(self) -> str:
-        return f"MolecularGraph({self.canonical_smiles})"
+    def atom_degree(self, atom_idx: int, as_multigraph: bool) -> int:
+        """Return the degree of the atom at the given index.
 
-    def update_representation(self) -> None:
+        Args:
+            atom_idx (int):
+                atom index
+            as_multigraph (bool, optional):
+                if True, the degree is the number of bonds (including multiple
+                bonds) connected to the atom.
+                If False, the degree is the number of atoms connected to the atom.
+
+        Returns:
+            int: degree of the atom at the given index
+        """
+        if as_multigraph:
+            return self._explicit_valence(atom_idx)
+        degree: int = self.mol.GetAtomWithIdx(atom_idx).GetDegree()
+        return degree
+
+    def update_representation(self, update_property_cache=False) -> None:
         """Update internal RDKit representation of the molecular graph.
         This method should be called after each action on the molecular graph.
         """
         # sanitize molecule if needed
+        # print("BEFORE")
+        # print("atoms", self.atoms)
+        # for atom in self.mol.GetAtoms():
+        #     print(
+        #         atom.GetSymbol(),
+        #         atom.GetFormalCharge(),
+        #         atom.GetImplicitValence(),
+        #         atom.GetNoImplicit(),
+        #         atom.GetNumRadicalElectrons(),
+        #         atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
+        #     )
         if self.sanitize:
             Chem.SanitizeMol(self.mol)
             # clear computed properties
@@ -142,26 +223,162 @@ class MolecularGraph(MoleculeRepresentation):
 
         # kekulize the molecular graph
         # https://chemistry.stackexchange.com/questions/116498/what-is-kekulization-in-rdkit
-        Chem.Kekulize(self.mol)
+        Chem.Kekulize(self.mol, clearAromaticFlags=True)
 
-        # setting all atoms to non aromatics
-        for atom in self.mol.GetAtoms():
-            atom.SetIsAromatic(False)
+        if update_property_cache:
+            # Updating the property cache of atoms
+            for atom in self.mol.GetAtoms():
+                atom.UpdatePropertyCache()
 
-        # setting all bonds to non aromatics
-        for bond in self.mol.GetBonds():
-            bond.SetIsAromatic(False)
-
-        # update the property cache of atoms
-        for i in range(self.mol.GetNumAtoms()):
-            for j in range(self.mol.GetNumAtoms()):
-                bond = self.mol.GetBondBetweenAtoms(i, j)
-                if bond is not None:
-                    bond.SetIsAromatic(False)
-
-        # update RDKit representation
-        self.mol.UpdatePropertyCache()
+            # update RDKit representation
+            self.mol.UpdatePropertyCache()
         Chem.FastFindRings(self.mol)
+        # print("AFTER")
+
+        # print("atoms", self.atoms)
+        # for atom in self.mol.GetAtoms():
+        #     print(
+        #         atom.GetSymbol(),
+        #         atom.GetFormalCharge(),
+        #         atom.GetImplicitValence(),
+        #         atom.GetNoImplicit(),
+        #         atom.GetNumRadicalElectrons(),
+        #         atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
+        #     )
+
+    def atom_type(self, atom_idx: int) -> str:
+        """Return the atom type of the atom at the given index.
+
+        Args:
+            atom_idx (int):
+                atom index
+
+        Returns:
+            str: atom type of the atom at the given index
+        """
+        symbol: str = self.mol.GetAtomWithIdx(atom_idx).GetSymbol()
+        return symbol
+
+    def bond_type_num(self, atom1_idx: int, atom2_idx: int) -> int:
+        """Return the bond type between the two atoms.
+
+        Args:
+            atom1_idx (int):
+                index of the first atom
+            atom2_idx (int):
+                index of the second atom
+
+        Returns:
+            int: bond type between the two atoms
+        """
+        bond = self.mol.GetBondBetweenAtoms(atom1_idx, atom2_idx)
+        if bond is None:
+            return 0
+        return int(bond.GetBondType())
+
+    def atoms_bonded_to(self, atom_idx: int) -> list[int]:
+        """Return the list of atoms bonded to the atom at the given index.
+
+        Args:
+            atom_idx (int):
+                atom index
+
+        Returns:
+            list[int]: list of atoms bonded to the atom at the given index
+        """
+        return [
+            bond.GetOtherAtomIdx(atom_idx)
+            for bond in self.mol.GetAtomWithIdx(atom_idx).GetBonds()
+        ]
+
+    def _explicit_valence(self, atom_idx: int) -> int:
+        """Return the explicit valence of the atom at the given index.
+
+        Args:
+            atom_idx (int):
+                atom index
+
+        Returns:
+            int: explicit valence of the atom at the given index
+        """
+        atom = self.mol.GetAtomWithIdx(atom_idx)
+        atom.UpdatePropertyCache()
+        valence: int = atom.GetExplicitValence()
+        return valence
+
+    def _implicit_valence(self, atom_idx: int) -> int:
+        """Return the implicit valence of the atom at the given index.
+
+        Args:
+            atom_idx (int):
+                atom index
+
+        Returns:
+            int: implicit valence of the atom at the given index
+        """
+        atom = self.mol.GetAtomWithIdx(atom_idx)
+        atom.UpdatePropertyCache()
+        valence: int = atom.GetImplicitValence()
+        if atom.GetSymbol() == "S":
+            total_valence: int = atom.GetTotalValence()
+            if total_valence in (2, 4):
+                valence += 2
+        return valence
+
+    def draw(
+        self,
+        at_idx: bool = False,
+        show: bool = True,
+        size: int = 200,
+        write_to_path: str = "",
+    ) -> None:
+        """
+        Drawing the molecule
+        """
+        mol = self.mol.GetMol()
+        atoms = mol.GetNumAtoms()
+
+        # Setting the ids as a property if requested
+        if at_idx:
+            for idx in range(atoms):
+                mol.GetAtomWithIdx(idx).SetProp(
+                    "molAtomMapNumber", str(mol.GetAtomWithIdx(idx).GetIdx())
+                )
+
+        # Computing coordinates and making sure the properties are computed
+        Compute2DCoords(mol)
+        mol.UpdatePropertyCache()
+
+        # Drawing the molecule
+        dr = Draw.rdMolDraw2D.MolDraw2DCairo(size, size)
+        opts = dr.drawOptions()
+
+        # Transparent background if not writing to file
+        if not write_to_path:
+            opts.clearBackground = False
+
+        dr.DrawMolecule(mol)
+        dr.FinishDrawing()
+
+        # Loading the molecule as a PIL object
+        bytes_images = dr.GetDrawingText()
+        image = Image.open(io.BytesIO(bytes_images))
+
+        if show:
+            image.show()
+
+        if write_to_path:
+            # Creating directories if they don't exist
+            os.makedirs(os.path.dirname(write_to_path), exist_ok=True)
+
+            # Writing image to disk
+            image.save(write_to_path, "PNG")
+
+        # return image
+
+    ############################################################
+    #                         ACTIONS                          #
+    ############################################################
 
     def add_atom(self, atom_type: str) -> None:
         """Add an atom to the molecular graph.
@@ -235,138 +452,3 @@ class MolecularGraph(MoleculeRepresentation):
         else:
             # Changing the bond type
             bond.SetBondType(bond_type)
-
-    def bridge_bonds_matrix(self) -> npt.NDArray[np.bool_]:
-        """Return a boolean matrix of size (nb_defined_atoms, nb_defined_atoms)
-        representing whether bonds of the molecule are bridge bonds.
-        """
-        # convert the adjacency matrix to a networkx graph
-        adjacency_matrix = nx.from_numpy_array(self.adjacency_matrix)
-
-        # initialize the output matrix
-        bridge_bonds_matrix = np.full((self.nb_atoms, self.nb_atoms), False, dtype=bool)
-
-        # find the bridge bonds and set the corresponding matrix elements to True
-        for atom1_idx, atom2_idx in nx.bridges(adjacency_matrix):
-            bridge_bonds_matrix[atom1_idx, atom2_idx] = True
-            bridge_bonds_matrix[atom2_idx, atom1_idx] = True
-
-        return bridge_bonds_matrix
-
-    def atom_degree(self, atom_idx: int, as_multigraph: bool) -> int:
-        """Return the degree of the atom at the given index.
-
-        Args:
-            atom_idx (int):
-                atom index
-            as_multigraph (bool, optional):
-                if True, the degree is the number of bonds (including multiple
-                bonds) connected to the atom.
-                If False, the degree is the number of atoms connected to the atom.
-
-        Returns:
-            int: degree of the atom at the given index
-        """
-        if as_multigraph:
-            return self._explicit_valence(atom_idx)
-        degree: int = self.mol.GetAtomWithIdx(atom_idx).GetDegree()
-        return degree
-
-    def atom_type(self, atom_idx: int) -> str:
-        """Return the atom type of the atom at the given index.
-
-        Args:
-            atom_idx (int):
-                atom index
-
-        Returns:
-            str: atom type of the atom at the given index
-        """
-        symbol: str = self.mol.GetAtomWithIdx(atom_idx).GetSymbol()
-        return symbol
-
-    def bond_type_num(self, atom1_idx: int, atom2_idx: int) -> int:
-        """Return the bond type between the two atoms.
-
-        Args:
-            atom1_idx (int):
-                index of the first atom
-            atom2_idx (int):
-                index of the second atom
-
-        Returns:
-            int: bond type between the two atoms
-        """
-        bond = self.mol.GetBondBetweenAtoms(atom1_idx, atom2_idx)
-        if bond is None:
-            return 0
-        return int(bond.GetBondType())
-
-    def formal_charge_vector(self) -> list[int]:
-        """Return the formal charge of each atom in the molecule.
-
-        Returns:
-            list[int]: formal charge of each atom in the molecule
-        """
-        return [
-            self.mol.GetAtomWithIdx(atom_idx).GetFormalCharge()
-            for atom_idx in range(self.nb_atoms)
-        ]
-
-    def explicit_valence_vector(self) -> npt.NDArray[np.int32]:
-        """Return the explicit valence of each atom in the molecule.
-
-        Returns:
-            np.ndarray[int]: explicit valence of each atom in the molecule
-        """
-        return np.array(
-            [self._explicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
-        )
-
-    def implicit_valence_vector(self) -> npt.NDArray[np.int32]:
-        """Return the implicit valence of each atom in the molecule.
-
-        Returns:
-            np.ndarray[int]: implicit valence of each atom in the molecule
-        """
-        return np.array(
-            [self._implicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
-        )
-
-    def _explicit_valence(self, atom_idx: int) -> int:
-        """Return the explicit valence of the atom at the given index.
-
-        Args:
-            atom_idx (int):
-                atom index
-
-        Returns:
-            int: explicit valence of the atom at the given index
-        """
-        atom = self.mol.GetAtomWithIdx(atom_idx)
-        atom.UpdatePropertyCache()
-        valence: int = atom.GetExplicitValence()
-        return valence
-
-    def _implicit_valence(self, atom_idx: int) -> int:
-        """Return the implicit valence of the atom at the given index.
-
-        Args:
-            atom_idx (int):
-                atom index
-
-        Returns:
-            int: implicit valence of the atom at the given index
-        """
-        atom = self.mol.GetAtomWithIdx(atom_idx)
-        atom.UpdatePropertyCache()
-        valence: int = atom.GetImplicitValence()
-        if atom.GetSymbol() == "S":
-            total_valence: int = atom.GetTotalValence()
-            if total_valence in (2, 4):
-                valence += 2
-        return valence
-
-    def atoms(self) -> list[str]:
-        """Return the list of atoms in the molecule."""
-        return [atom.GetSymbol() for atom in self.mol.GetAtoms()]

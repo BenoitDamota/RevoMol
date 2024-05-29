@@ -76,11 +76,11 @@ class RemoveGroupMolGraph(Action):
             new_mol_graph.update_representation()
         except Exception as e:
             print("Removing group caused an error.")
-            print("SMILES before: " + str(mol_graph.canonical_smiles))
-            print("SMILES after: " + str(new_mol_graph.canonical_smiles))
+            print("SMILES before: " + str(mol_graph.smiles))
+            print("SMILES after: " + str(new_mol_graph.smiles))
             raise e
 
-        return Molecule(new_mol_graph.canonical_smiles)
+        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (
@@ -98,18 +98,15 @@ class RemoveGroupMolGraph(Action):
 
         action_list: list[Action] = []
 
-        # Extract the bridge matrix
-        bridge_bond_matrix = mol_graph.bridge_bonds_matrix()
-        formal_charge_vector = mol_graph.formal_charge_vector()
+        formal_charges = mol_graph.formal_charges
 
         # for each bond
-        for atom1, atom2 in itertools.combinations(range(mol_graph.nb_atoms), 2):
+        for atom1, atom2 in mol_graph.bridge_bonds:
             # The group can be removed only if the bond is a bridge and none
             # of the atoms has a formal charge and at least one atom is mutable
             if not (
-                bridge_bond_matrix[atom1][atom2]
-                and formal_charge_vector[atom1] == 0
-                and formal_charge_vector[atom2] == 0
+                formal_charges[atom1] == 0
+                and formal_charges[atom2] == 0
                 and (
                     mol_graph.atom_mutability(atom1) or mol_graph.atom_mutability(atom2)
                 )

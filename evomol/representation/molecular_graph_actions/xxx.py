@@ -30,7 +30,7 @@ class XXXMolGraph(Action):
             print("XXX caused an error.")
             raise e
 
-        return Molecule(new_mol_graph.canonical_smiles)
+        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return f"XXXMolGraph({self.molecule})"

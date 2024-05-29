@@ -36,10 +36,39 @@ class RemoveAtomMolGraph(Action):
             print("Remove atom caused an error.")
             raise e
 
-        return Molecule(new_mol_graph.canonical_smiles)
+        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return f"RemoveAtomMolGraph({self.molecule}, {self.atom_idx})"
+
+    # @override
+    # @classmethod
+    # def list_actions(cls, molecule: Molecule) -> list[Action]:
+    #     """List possible actions to remove an atom from the molecular graph."""
+
+    #     mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+
+    #     action_list: list[Action] = []
+
+    #     # impossible to remove the atoms whose removal would create
+    #     # multiple connected components in the molecular graph
+
+    #     # convert the adjacency matrix to a networkx graph
+    #     adjacency_matrix = nx.from_numpy_array(mol_graph.adjacency_matrix)
+
+    #     # find articulation points
+    #     # (i.e. removing the atom would create two connected components)
+    #     articulation_points = [False] * mol_graph.nb_atoms
+    #     for atom_idx in nx.articulation_points(adjacency_matrix):
+    #         articulation_points[atom_idx] = True
+
+    #     # any atom can be removed if it is mutable and
+    #     # if it has only one neighbor or if none of its bonds are bridges
+    #     for i in range(mol_graph.nb_atoms):
+    #         if not articulation_points[i] and mol_graph.atom_mutability(i):
+    #             action_list.append(RemoveAtomMolGraph(molecule, i))
+
+    #     return action_list
 
     @override
     @classmethod
@@ -53,19 +82,28 @@ class RemoveAtomMolGraph(Action):
         # impossible to remove the atoms whose removal would create
         # multiple connected components in the molecular graph
 
-        # convert the adjacency matrix to a networkx graph
-        adjacency_matrix = nx.from_numpy_array(mol_graph.adjacency_matrix)
-
         # find articulation points
         # (i.e. removing the atom would create two connected components)
         articulation_points = [False] * mol_graph.nb_atoms
-        for atom_idx in nx.articulation_points(adjacency_matrix):
+        for atom_idx in nx.articulation_points(nx.Graph(mol_graph.adjacency_matrix)):
             articulation_points[atom_idx] = True
 
+        atom_mutability = [
+            mol_graph.atom_mutability(atom) for atom in range(mol_graph.nb_atoms)
+        ]
+
         # any atom can be removed if it is mutable and
-        # if it has only one neighbor or if none of its bonds are bridges
-        for i in range(mol_graph.nb_atoms):
-            if not articulation_points[i] and mol_graph.atom_mutability(i):
-                action_list.append(RemoveAtomMolGraph(molecule, i))
+        # not an articulation point and none of its neighbors are not mutable
+        for atom in range(mol_graph.nb_atoms):
+            if articulation_points[atom] or not atom_mutability[atom]:
+                continue
+
+            # the atom cannot be removed if one of its neighbors is not mutable
+            if any(
+                not atom_mutability[neighbor]
+                for neighbor in mol_graph.atoms_bonded_to(atom)
+            ):
+                continue
+            action_list.append(RemoveAtomMolGraph(molecule, atom))
 
         return action_list

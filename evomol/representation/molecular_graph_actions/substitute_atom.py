@@ -25,6 +25,23 @@ class SubstituteAtomMolGraph(Action):
         self.atom_idx: int = atom_idx
         self.new_type: str = new_type
 
+    @classmethod
+    def set_accepted_substitutions(
+        cls, accepted_substitutions: dict[str, list[str]]
+    ) -> None:
+        cls.accepted_substitutions = accepted_substitutions
+
+    @classmethod
+    def init_accepted_substitutions_from_accepted_atoms(cls):
+        cls.accepted_substitutions = {}
+        for accepted_atom in Molecule.accepted_atoms:
+            if accepted_atom != "H":
+                curr_atom_subst: list[str] = []
+                for other_accepted_atom in Molecule.accepted_atoms:
+                    if other_accepted_atom != accepted_atom:
+                        curr_atom_subst.append(other_accepted_atom)
+                cls.accepted_substitutions[accepted_atom] = curr_atom_subst
+
     @override
     def apply(self) -> Molecule:
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
@@ -39,7 +56,7 @@ class SubstituteAtomMolGraph(Action):
             print("Substitution atom caused an error.")
             raise e
 
-        return Molecule(new_mol_graph.canonical_smiles)
+        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (
@@ -66,6 +83,8 @@ class SubstituteAtomMolGraph(Action):
 
         for atom in range(mol_graph.nb_atoms):
             atom_type = mol_graph.atom_type(atom)
+            if not mol_graph.atom_mutability(atom):
+                continue
             explicit_valence = mol_graph.atom_degree(atom, as_multigraph=True)
             for subst in cls.accepted_substitutions[atom_type]:
                 if max_valences[subst] >= explicit_valence:
