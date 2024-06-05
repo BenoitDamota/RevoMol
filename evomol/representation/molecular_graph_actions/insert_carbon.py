@@ -2,7 +2,6 @@
 Insert a carbon in the molecular graph between two atoms that have no formal charge.
 """
 
-import itertools
 from copy import copy
 
 from typing_extensions import override
@@ -85,7 +84,8 @@ class InsertCarbonMolGraph(Action):
     #             and formal_charges[atom2] == 0
     #             # at least one atom is mutable
     #             and (
-    #                 mol_graph.atom_mutability(atom1) or mol_graph.atom_mutability(atom2)
+    #                 mol_graph.atom_mutability(atom1) or
+    # mol_graph.atom_mutability(atom2)
     #             )
     #         ):
     #             continue
@@ -171,8 +171,6 @@ class InsertCarbonMolGraph(Action):
             return []
 
         action_list: list[Action] = []
-
-        formal_charges = mol_graph.formal_charges
 
         # insert on existing bond of non charged atoms if at least one atom is mutable
         for atom1, atom2 in mol_graph.bonds:

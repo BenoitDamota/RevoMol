@@ -2,8 +2,8 @@
 Change bond for molecular graph representation.
 """
 
-from copy import copy
 import itertools
+from copy import copy
 
 from typing_extensions import override
 
@@ -65,7 +65,7 @@ class ChangeBondMolGraph(Action):
         implicit_valences = mol_graph.implicit_valences
         bridge_bonds_matrix = mol_graph.bridge_bonds_matrix
 
-        mutable: bool = [
+        mutable: list[bool] = [
             mol_graph.atom_mutability(atom) for atom in range(mol_graph.nb_atoms)
         ]
 

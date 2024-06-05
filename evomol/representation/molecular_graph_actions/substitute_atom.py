@@ -29,10 +29,12 @@ class SubstituteAtomMolGraph(Action):
     def set_accepted_substitutions(
         cls, accepted_substitutions: dict[str, list[str]]
     ) -> None:
+        """Set the accepted substitutions."""
         cls.accepted_substitutions = accepted_substitutions
 
     @classmethod
-    def init_accepted_substitutions_from_accepted_atoms(cls):
+    def init_accepted_substitutions_from_accepted_atoms(cls) -> None:
+        """Initialize the accepted substitutions from the accepted atoms."""
         cls.accepted_substitutions = {}
         for accepted_atom in Molecule.accepted_atoms:
             if accepted_atom != "H":

@@ -3,17 +3,10 @@ Molecular graph representation of a molecule with RDKit.
 """
 
 from __future__ import annotations
-import io
-import os
 
-from PIL import Image
 import networkx as nx
-from typing_extensions import override
 from rdkit import Chem
-from rdkit.Chem import rdchem
-from rdkit.Chem.rdDepictor import Compute2DCoords
-from rdkit.Chem import Draw
-
+from typing_extensions import override
 
 from evomol.representation.molecule import MoleculeRepresentation
 
@@ -31,9 +24,9 @@ class MolecularGraph(MoleculeRepresentation):
     ):
         super().__init__(smiles)
         try:
-            self.mol: rdchem.RWMol = rdchem.RWMol(Chem.MolFromSmiles(smiles))
+            self.mol: Chem.rdchem.RWMol = Chem.rdchem.RWMol(Chem.MolFromSmiles(smiles))
         except Exception as e:
-            raise ValueError(f"Error with SMILES {smiles}: {e}")
+            raise ValueError(f"Error with SMILES {smiles}: {e}") from e
         self.sanitize: bool = sanitize
         self._mutability = mutability
 
@@ -175,7 +168,12 @@ class MolecularGraph(MoleculeRepresentation):
     def atom_mutability(self, atom_idx: int) -> bool:
         """Return the mutability of the atom at the given index."""
         atom = self.mol.GetAtomWithIdx(atom_idx)
-        return atom.GetBoolProp("mutability") and not atom.GetNoImplicit()
+        # return atom.GetBoolProp("mutability") and not atom.GetNoImplicit()
+        return (
+            atom.GetBoolProp("mutability") is True
+            and atom.GetNumRadicalElectrons() == 0
+            and atom.GetFormalCharge() == 0
+        )
 
     def set_atom_mutability(self, atom_idx: int, mutability: bool) -> None:
         """Set the mutability of the atom at the given index."""
@@ -200,7 +198,7 @@ class MolecularGraph(MoleculeRepresentation):
         degree: int = self.mol.GetAtomWithIdx(atom_idx).GetDegree()
         return degree
 
-    def update_representation(self, update_property_cache=False) -> None:
+    def update_representation(self, update_property_cache: bool = False) -> None:
         """Update internal RDKit representation of the molecular graph.
         This method should be called after each action on the molecular graph.
         """
@@ -325,56 +323,61 @@ class MolecularGraph(MoleculeRepresentation):
                 valence += 2
         return valence
 
-    def draw(
-        self,
-        at_idx: bool = False,
-        show: bool = True,
-        size: int = 200,
-        write_to_path: str = "",
-    ) -> None:
-        """
-        Drawing the molecule
-        """
-        mol = self.mol.GetMol()
-        atoms = mol.GetNumAtoms()
+    # import io
+    # import os
+    # from rdkit.Chem.rdDepictor import Compute2DCoords
+    # from PIL import Image
+    # from rdkit.Chem import Draw
+    # def draw(
+    #     self,
+    #     at_idx: bool = False,
+    #     show: bool = True,
+    #     size: int = 200,
+    #     write_to_path: str = "",
+    # ) -> None:
+    #     """
+    #     Drawing the molecule
+    #     """
+    #     mol = self.mol.GetMol()
+    #     atoms = mol.GetNumAtoms()
 
-        # Setting the ids as a property if requested
-        if at_idx:
-            for idx in range(atoms):
-                mol.GetAtomWithIdx(idx).SetProp(
-                    "molAtomMapNumber", str(mol.GetAtomWithIdx(idx).GetIdx())
-                )
+    #     # Setting the ids as a property if requested
+    #     if at_idx:
+    #         for idx in range(atoms):
+    #             mol.GetAtomWithIdx(idx).SetProp(
+    #                 "molAtomMapNumber", str(mol.GetAtomWithIdx(idx).GetIdx())
+    #             )
 
-        # Computing coordinates and making sure the properties are computed
-        Compute2DCoords(mol)
-        mol.UpdatePropertyCache()
+    #     # Computing coordinates and making sure the properties are computed
+    #     Compute2DCoords(mol)
+    #     mol.UpdatePropertyCache()
 
-        # Drawing the molecule
-        dr = Draw.rdMolDraw2D.MolDraw2DCairo(size, size)
-        opts = dr.drawOptions()
+    #     # Drawing the molecule
+    #     dr = Draw.rdMolDraw2D.MolDraw2DCairo(size, size)
+    #     opts = dr.drawOptions()
 
-        # Transparent background if not writing to file
-        if not write_to_path:
-            opts.clearBackground = False
+    #     # Transparent background if not writing to file
+    #     if not write_to_path:
+    #         opts.clearBackground = False
 
-        dr.DrawMolecule(mol)
-        dr.FinishDrawing()
+    #     dr.DrawMolecule(mol)
+    #     dr.FinishDrawing()
 
-        # Loading the molecule as a PIL object
-        bytes_images = dr.GetDrawingText()
-        image = Image.open(io.BytesIO(bytes_images))
+    #     # Loading the molecule as a PIL object
+    #     bytes_images = dr.GetDrawingText()
+    #     image = Image.open(io.BytesIO(bytes_images))
 
-        if show:
-            image.show()
+    #     if show:
+    #         image.show()
 
-        if write_to_path:
-            # Creating directories if they don't exist
-            os.makedirs(os.path.dirname(write_to_path), exist_ok=True)
+    #     if write_to_path:
+    #         # Creating directories if they don't exist
+    #         os.makedirs(os.path.dirname(write_to_path), exist_ok=True)
 
-            # Writing image to disk
-            image.save(write_to_path, "PNG")
+    #         # Writing image to disk
+    #         image.save(write_to_path, "PNG")
 
-        # return image
+    #     # return image
 
     ############################################################
     #                         ACTIONS                          #
@@ -433,7 +436,7 @@ class MolecularGraph(MoleculeRepresentation):
 
         bond_type = None
         if bond_type_num == 0:
-            bond_type = None  # no bond or Chem.BondType.ZERO ? TODO
+            bond_type = None
         elif bond_type_num == 1:
             bond_type = Chem.BondType.SINGLE
         elif bond_type_num == 2:

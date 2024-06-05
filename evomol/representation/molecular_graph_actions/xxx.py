@@ -15,8 +15,8 @@ class XXXMolGraph(Action):
     XXX to the molecular graph.
     """
 
-    def __init__(self, molecule: Molecule) -> None:
-        super().__init__(molecule)
+    # def __init__(self, molecule: Molecule) -> None:
+    #     super().__init__(molecule)
 
     @override
     def apply(self) -> Molecule:

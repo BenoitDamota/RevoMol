@@ -8,7 +8,7 @@ The following page can be useful :
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import ClassVar, TypeVar, Type
+from typing import ClassVar, TypeVar
 
 from rdkit import Chem
 
@@ -129,14 +129,14 @@ class MoleculeRepresentation(ABC):
     """
 
     # possible action space for the molecule representation
-    action_space: ClassVar[list[Type[Action]]] = []
+    action_space: ClassVar[list[type[Action]]] = []
 
     def __init__(self, str_id: str):
         """init the molecule representation from a string."""
         self.str_id: str = str_id
 
     @classmethod
-    def set_action_space(cls, action_space: list[Type[Action]]) -> None:
+    def set_action_space(cls, action_space: list[type[Action]]) -> None:
         """Set the possible action space for the molecule representation."""
         cls.action_space = action_space
 
@@ -150,7 +150,7 @@ class MoleculeRepresentation(ABC):
         }
 
     @classmethod
-    def list_action_spaces(cls) -> list[Type[Action]]:
+    def list_action_spaces(cls) -> list[type[Action]]:
         """List all possible actions for the molecule representation."""
         return cls.action_space
 
@@ -209,7 +209,7 @@ class Molecule:
             for representation_class in Molecule.representations_class
         ]
 
-    def list_available_actions_space(self) -> dict[str, list[Type[Action]]]:
+    def list_available_actions_space(self) -> dict[str, list[type[Action]]]:
         """List all available actions space for each representation."""
         return {
             representation.class_name(): representation.action_space
@@ -240,7 +240,7 @@ class Molecule:
         # }
 
     def get_representation(
-        self, representation_class: Type[TypeMoleculeRepresentation]
+        self, representation_class: type[TypeMoleculeRepresentation]
     ) -> TypeMoleculeRepresentation:
         """Return the representation of the molecule for the given class."""
         for representation in self.representations:

@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Cyril Grelier <cyril.grelier[at]univ-angers.fr>
+* Cyril Grelier <cyril.grelier@univ-angers.fr>
 
 Contributors
 ------------

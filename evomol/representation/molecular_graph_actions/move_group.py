@@ -2,7 +2,6 @@
 Move a group of atoms in a molecular graph.
 """
 
-import itertools
 from copy import copy
 
 import networkx as nx
@@ -10,7 +9,6 @@ from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
-
 
 # class MoveGroupMolGraph(Action):
 #     """
@@ -109,7 +107,8 @@ from evomol.representation.molecule import Action, Molecule
 #                 atom1
 #             ) or mol_graph.atom_mutability(atom2)
 #             if not (
-#                 bridge_bonds_matrix[atom1][atom2] and formal_charge_ok and mutability_ok
+#                 bridge_bonds_matrix[atom1][atom2] and
+# formal_charge_ok and mutability_ok
 #             ):
 #                 continue
 #             # Extracting the current bond type
@@ -193,7 +192,8 @@ class MoveGroupMolGraph(Action):
 
         nb_atoms = mol_graph.nb_atoms
 
-        # list all pairs of true values in the matrix if at least one of the atom is mutable
+        # list all pairs of true values in the matrix
+        # if at least one of the atom is mutable
 
         bridges = [
             (atom1, atom2)

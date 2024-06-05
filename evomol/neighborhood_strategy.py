@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 from evomol.representation.molecule import (
     Action,
     Molecule,
-    MoleculeRepresentation,
     pprint_action_space,
 )
 

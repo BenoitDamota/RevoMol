@@ -2,6 +2,7 @@
 This module contains the classes for the molecular graph actions.
 """
 
+# flake8: noqa
 from .add_atom import (
     AddAtomMolGraph as AddAtomMolGraph,
 )

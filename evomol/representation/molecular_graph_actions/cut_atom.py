@@ -3,6 +3,7 @@ Cut an atom from the molecular graph.
 """
 
 from copy import copy
+
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
