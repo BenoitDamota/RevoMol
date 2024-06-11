@@ -74,5 +74,6 @@ class AddAtomMolGraph(Action):
             AddAtomMolGraph(molecule, atom_idx, atom_type)
             for atom_idx in range(mol_graph.nb_atoms)
             if implicit_valences[atom_idx] > 0
+            and not mol_graph.atom_charged_or_radical(atom_idx)
             for atom_type in Molecule.accepted_atoms
         ]

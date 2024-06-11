@@ -6,6 +6,7 @@ from copy import copy
 
 import networkx as nx
 from typing_extensions import override
+import rdkit
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
@@ -25,11 +26,6 @@ def connected_component_after_removing_bond(
     Returns:
         list[int]: list of atom indices in the connected component containing atom1
     """
-    # Remove the bond between atom1 and atom2
-    adjacency_matrix[atom1][atom2] = 0
-    adjacency_matrix[atom2][atom1] = 0
-
-    return list(nx.node_connected_component(nx.Graph(adjacency_matrix), atom1))
 
 
 class RemoveGroupMolGraph(Action):
@@ -37,7 +33,7 @@ class RemoveGroupMolGraph(Action):
     Remove a group of connected atoms from the molecular graph.
     """
 
-    only_remove_smallest_group: bool = False
+    remove_only_smallest: bool = False
 
     def __init__(
         self,
@@ -55,15 +51,20 @@ class RemoveGroupMolGraph(Action):
         assert mol_graph is not None
         new_mol_graph: MolecularGraph = copy(mol_graph)
 
-        atom_to_remove = connected_component_after_removing_bond(
-            mol_graph.adjacency_matrix,
-            self.bridge_atom_to_remove,
-            self.bridge_atom_to_keep,
-        )
+        # Remove the bond between the two bridge atoms
+        new_mol_graph.set_bond(self.bridge_atom_to_keep, self.bridge_atom_to_remove, 0)
 
-        # Remove the atoms in reverse order to avoid changing the index of the
-        # atoms to remove
-        for atom in sorted(atom_to_remove, reverse=True):
+        # Remove the atoms in the connected component containing
+        # the bridge atom to remove in reverse order
+        to_remove: list[str] = sorted(
+            list(
+                nx.node_connected_component(
+                    nx.Graph(new_mol_graph.adjacency_matrix), self.bridge_atom_to_remove
+                )
+            ),
+            reverse=True,
+        )
+        for atom in to_remove:
             new_mol_graph.remove_atom(atom)
 
         try:
@@ -83,74 +84,6 @@ class RemoveGroupMolGraph(Action):
             f"{self.bridge_atom_to_keep}, {self.bridge_atom_to_remove})"
         )
 
-    # @override
-    # @classmethod
-    # def list_actions(cls, molecule: Molecule) -> list[Action]:
-    #     """List possible actions to remove a group from the molecular graph."""
-
-    #     mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
-
-    #     action_list: list[Action] = []
-
-    #     formal_charges = mol_graph.formal_charges
-
-    #     # for each bond
-    #     for atom1, atom2 in mol_graph.bridge_bonds:
-    #         # The group can be removed only if the bond is a bridge and none
-    #         # of the atoms has a formal charge and at least one atom is mutable
-    #         if not (
-    #             formal_charges[atom1] == 0
-    #             and formal_charges[atom2] == 0
-    #             and (
-    #                 mol_graph.atom_mutability(atom1) or
-    # mol_graph.atom_mutability(atom2)
-    #             )
-    #         ):
-    #             continue
-
-    #         if cls.only_remove_smallest_group:
-    #             # extract the indices of both connected components if the current
-    #             # bond was removed
-    #             connected_component_1 = connected_component_after_removing_bond(
-    #                 mol_graph.adjacency_matrix, atom1, atom2
-    #             )
-    #             connected_component_2 = connected_component_after_removing_bond(
-    #                 mol_graph.adjacency_matrix, atom2, atom1
-    #             )
-    #             if len(connected_component_1) <= len(connected_component_2):
-    #                 action_list.append(
-    #                     RemoveGroupMolGraph(
-    #                         molecule,
-    #                         bridge_atom_to_keep=atom2,
-    #                         bridge_atom_to_remove=atom1,
-    #                     )
-    #                 )
-    #             if len(connected_component_2) <= len(connected_component_1):
-    #                 action_list.append(
-    #                     RemoveGroupMolGraph(
-    #                         molecule,
-    #                         bridge_atom_to_keep=atom1,
-    #                         bridge_atom_to_remove=atom2,
-    #                     )
-    #                 )
-    #         else:
-    #             action_list.append(
-    #                 RemoveGroupMolGraph(
-    #                     molecule,
-    #                     bridge_atom_to_keep=atom1,
-    #                     bridge_atom_to_remove=atom2,
-    #                 )
-    #             )
-    #             action_list.append(
-    #                 RemoveGroupMolGraph(
-    #                     molecule,
-    #                     bridge_atom_to_keep=atom2,
-    #                     bridge_atom_to_remove=atom1,
-    #                 )
-    #             )
-
-    #     return action_list
-
     @override
     @classmethod
     def list_actions(cls, molecule: Molecule) -> list[Action]:
@@ -161,15 +94,31 @@ class RemoveGroupMolGraph(Action):
         action_list: list[Action] = []
 
         nb_atoms = mol_graph.nb_atoms
-        mutable = [mol_graph.atom_mutability(atom) for atom in range(nb_atoms)]
+        charged_or_radical: list[bool] = [
+            mol_graph.atom_charged_or_radical(atom) for atom in range(nb_atoms)
+        ]
 
-        distances = nx.floyd_warshall(nx.Graph(mol_graph.adjacency_matrix))
+        # list bridge bonds where no atom is charged or radical
+        bridges = [
+            (atom1, atom2)
+            for atom1, atom2 in mol_graph.bridge_bonds
+            if not charged_or_radical[atom1] and not charged_or_radical[atom2]
+        ]
+
+        # No possible action if no bridge bond
+        if not bridges:
+            return []
+
+        # Compute the distance matrix
+        # to determine the connected components for each bridge bond
+        # an atom is in the same component as the atom it is closest to
+        # in the bridge bond
+        distances: list[list[int]] = rdkit.Chem.rdmolops.GetDistanceMatrix(
+            mol_graph.mol
+        )
 
         # for each bond
-        for atom1, atom2 in mol_graph.bridge_bonds:
-
-            if not mutable[atom1] or not mutable[atom2]:
-                continue
+        for atom1, atom2 in bridges:
 
             # list connected component for each side
             component1 = []
@@ -182,11 +131,14 @@ class RemoveGroupMolGraph(Action):
                 else:
                     component2.append(atom)
 
-            all_mutable1 = all(mutable[atom] for atom in component1)
-            all_mutable2 = all(mutable[atom] for atom in component2)
+            any_charged1 = any(charged_or_radical[atom] for atom in component1)
+            any_charged2 = any(charged_or_radical[atom] for atom in component2)
 
-            if cls.only_remove_smallest_group:
-                if len(component1) <= len(component2) and all_mutable1:
+            if any_charged1 and any_charged2:
+                continue
+
+            if cls.remove_only_smallest:
+                if len(component1) <= len(component2) and not any_charged1:
                     action_list.append(
                         RemoveGroupMolGraph(
                             molecule,
@@ -194,7 +146,7 @@ class RemoveGroupMolGraph(Action):
                             bridge_atom_to_remove=atom1,
                         )
                     )
-                if len(component2) <= len(component1) and all_mutable2:
+                if len(component2) <= len(component1) and not any_charged2:
                     action_list.append(
                         RemoveGroupMolGraph(
                             molecule,
@@ -203,7 +155,7 @@ class RemoveGroupMolGraph(Action):
                         )
                     )
             else:
-                if all_mutable2:
+                if not any_charged2:
                     action_list.append(
                         RemoveGroupMolGraph(
                             molecule,
@@ -211,7 +163,7 @@ class RemoveGroupMolGraph(Action):
                             bridge_atom_to_remove=atom2,
                         )
                     )
-                if all_mutable1:
+                if not any_charged1:
                     action_list.append(
                         RemoveGroupMolGraph(
                             molecule,

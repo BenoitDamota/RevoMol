@@ -16,34 +16,24 @@ class MolecularGraph(MoleculeRepresentation):
     Molecule representation using a molecular graph with RDKit.
     """
 
-    def __init__(
-        self,
-        smiles: str,
-        sanitize: bool = False,
-        mutability: bool = True,
-    ):
+    def __init__(self, smiles: str, sanitize: bool = False):
         super().__init__(smiles)
         try:
             self.mol: Chem.rdchem.RWMol = Chem.rdchem.RWMol(Chem.MolFromSmiles(smiles))
         except Exception as e:
             raise ValueError(f"Error with SMILES {smiles}: {e}") from e
+
+        if self.mol is None:
+            raise ValueError(f"Error with SMILES {smiles}")
+
         self.sanitize: bool = sanitize
-        self._mutability = mutability
 
-        for atom in self.mol.GetAtoms():
-            atom.SetBoolProp("mutability", mutability)
-
-        # self.update_representation() # TODO remettre
+        self.update_representation()
 
     def __copy__(self) -> MolecularGraph:
-        mol = MolecularGraph("", self.sanitize, self._mutability)
+        mol = MolecularGraph("", self.sanitize)
         mol.mol = Chem.RWMol(self.mol, True)
-        for i, atom in enumerate(self.mol.GetAtoms()):
-            mol.mol.GetAtomWithIdx(i).SetBoolProp(
-                "mutability", atom.GetBoolProp("mutability")
-            )
         mol.update_representation()
-        # mol.update_smile()
         return mol
 
     def __eq__(self, value: object) -> bool:
@@ -71,10 +61,6 @@ class MolecularGraph(MoleculeRepresentation):
         smiles: str = Chem.MolToSmiles(self.mol, canonical=False)
         return smiles
 
-    # def update_smile(self) -> None:
-    #     """Update the SMILES representation of the molecule."""
-    #     self.smiles = Chem.MolToSmiles(self.mol)
-
     @property
     def canonical_smiles(self) -> str:
         """Return the canonical SMILES representation of the molecule."""
@@ -83,28 +69,20 @@ class MolecularGraph(MoleculeRepresentation):
                 Chem.MolToSmiles(MolecularGraph(Chem.MolToSmiles(self.mol)).mol)
             )
         )
-        # mol = MolecularGraph(Chem.MolToSmiles(self.mol)).mol
-        # print(
-        #     "in canonical_smiles",
-        #     Chem.MolToSmiles(mol),
-        #     " mol to smiles :",
-        #     Chem.MolToSmiles(self.mol),
-        # )
-        # for atom in mol.GetAtoms():
-        #     print(
-        #         atom.GetSymbol(),
-        #         atom.GetFormalCharge(),
-        #         atom.GetImplicitValence(),
-        #         atom.GetNoImplicit(),
-        #         atom.GetNumRadicalElectrons(),
-        #         atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
-        #     )
         return canonic_smiles
 
     @property
     def adjacency_matrix(self) -> list[list[int]]:
         """Return the adjacency matrix of the molecule."""
         adjacency_matrix: list[list[int]] = Chem.GetAdjacencyMatrix(self.mol)
+        return adjacency_matrix
+
+    @property
+    def multigraph_adjacency_matrix(self) -> list[list[int]]:
+        """Return the adjacency matrix of the molecule."""
+        adjacency_matrix: list[list[int]] = Chem.GetAdjacencyMatrix(
+            self.mol, useBO=True
+        )
         return adjacency_matrix
 
     @property
@@ -119,11 +97,6 @@ class MolecularGraph(MoleculeRepresentation):
     def bridge_bonds(self) -> list[tuple[int, int]]:
         """Return a list of the pairs of atoms in bridge bonds."""
         return list(nx.bridges(nx.Graph(self.adjacency_matrix)))
-
-    # [
-    #         (atom1, atom2)
-    #         for atom1, atom2 in nx.bridges(nx.Graph(self.adjacency_matrix))
-    #     ]
 
     @property
     def bridge_bonds_matrix(self) -> list[list[bool]]:
@@ -165,19 +138,12 @@ class MolecularGraph(MoleculeRepresentation):
         """Return the implicit valence of each atom in the molecule."""
         return [self._implicit_valence(atom_idx) for atom_idx in range(self.nb_atoms)]
 
-    def atom_mutability(self, atom_idx: int) -> bool:
-        """Return the mutability of the atom at the given index."""
+    def atom_charged_or_radical(self, atom_idx: int) -> bool:
+        """Return the true if the atom at the given index is charged or radical."""
         atom = self.mol.GetAtomWithIdx(atom_idx)
-        # return atom.GetBoolProp("mutability") and not atom.GetNoImplicit()
-        return (
-            atom.GetBoolProp("mutability") is True
-            and atom.GetNumRadicalElectrons() == 0
-            and atom.GetFormalCharge() == 0
-        )
-
-    def set_atom_mutability(self, atom_idx: int, mutability: bool) -> None:
-        """Set the mutability of the atom at the given index."""
-        self.mol.GetAtomWithIdx(atom_idx).SetBoolProp("mutability", mutability)
+        is_radical: bool = atom.GetNumRadicalElectrons() != 0
+        is_charged: bool = atom.GetFormalCharge() != 0
+        return is_radical or is_charged
 
     def atom_degree(self, atom_idx: int, as_multigraph: bool) -> int:
         """Return the degree of the atom at the given index.
@@ -193,27 +159,20 @@ class MolecularGraph(MoleculeRepresentation):
         Returns:
             int: degree of the atom at the given index
         """
+        atom = self.mol.GetAtomWithIdx(atom_idx)
         if as_multigraph:
-            return self._explicit_valence(atom_idx)
-        degree: int = self.mol.GetAtomWithIdx(atom_idx).GetDegree()
+            atom.UpdatePropertyCache()
+            explicit_valence: int = atom.GetExplicitValence()
+            return explicit_valence
+        degree: int = atom.GetDegree()
         return degree
 
-    def update_representation(self, update_property_cache: bool = False) -> None:
+    def update_representation(self) -> None:
         """Update internal RDKit representation of the molecular graph.
         This method should be called after each action on the molecular graph.
         """
         # sanitize molecule if needed
-        # print("BEFORE")
-        # print("atoms", self.atoms)
-        # for atom in self.mol.GetAtoms():
-        #     print(
-        #         atom.GetSymbol(),
-        #         atom.GetFormalCharge(),
-        #         atom.GetImplicitValence(),
-        #         atom.GetNoImplicit(),
-        #         atom.GetNumRadicalElectrons(),
-        #         atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
-        #     )
+        # https://www.rdkit.org/docs/RDKit_Book.html#molecular-sanitization
         if self.sanitize:
             Chem.SanitizeMol(self.mol)
             # clear computed properties
@@ -223,26 +182,20 @@ class MolecularGraph(MoleculeRepresentation):
         # https://chemistry.stackexchange.com/questions/116498/what-is-kekulization-in-rdkit
         Chem.Kekulize(self.mol, clearAromaticFlags=True)
 
-        if update_property_cache:
-            # Updating the property cache of atoms
-            for atom in self.mol.GetAtoms():
-                atom.UpdatePropertyCache()
+        # set all explicit hydrogens to implicit
+        # if its not a radical or charged atom
+        for atom in self.mol.GetAtoms():
+            if atom.GetFormalCharge() == 0 and atom.GetNumRadicalElectrons() == 0:
+                atom.SetNoImplicit(False)
+                atom.SetNumExplicitHs(0)
 
-            # update RDKit representation
-            self.mol.UpdatePropertyCache()
+        # Updating the property cache of atoms
+        for atom in self.mol.GetAtoms():
+            atom.UpdatePropertyCache()
+
+        # update RDKit representation
+        self.mol.UpdatePropertyCache()
         Chem.FastFindRings(self.mol)
-        # print("AFTER")
-
-        # print("atoms", self.atoms)
-        # for atom in self.mol.GetAtoms():
-        #     print(
-        #         atom.GetSymbol(),
-        #         atom.GetFormalCharge(),
-        #         atom.GetImplicitValence(),
-        #         atom.GetNoImplicit(),
-        #         atom.GetNumRadicalElectrons(),
-        #         atom.GetBoolProp("mutability") and not atom.GetNoImplicit(),
-        #     )
 
     def atom_type(self, atom_idx: int) -> str:
         """Return the atom type of the atom at the given index.
@@ -323,61 +276,72 @@ class MolecularGraph(MoleculeRepresentation):
                 valence += 2
         return valence
 
-    # import io
-    # import os
-    # from rdkit.Chem.rdDepictor import Compute2DCoords
-    # from PIL import Image
-    # from rdkit.Chem import Draw
-    # def draw(
-    #     self,
-    #     at_idx: bool = False,
-    #     show: bool = True,
-    #     size: int = 200,
-    #     write_to_path: str = "",
-    # ) -> None:
-    #     """
-    #     Drawing the molecule
-    #     """
-    #     mol = self.mol.GetMol()
-    #     atoms = mol.GetNumAtoms()
+    def draw(
+        self,
+        at_idx: bool = False,
+        show: bool = True,
+        size: int = 200,
+        write_to_path: str = "",
+    ) -> None:
+        """
+        Drawing the molecule
+        """
+        import io
+        import os
+        from rdkit.Chem.rdDepictor import Compute2DCoords
+        from PIL import Image
+        from rdkit.Chem import Draw
 
-    #     # Setting the ids as a property if requested
-    #     if at_idx:
-    #         for idx in range(atoms):
-    #             mol.GetAtomWithIdx(idx).SetProp(
-    #                 "molAtomMapNumber", str(mol.GetAtomWithIdx(idx).GetIdx())
-    #             )
+        mol = self.mol.GetMol()
+        atoms = mol.GetNumAtoms()
 
-    #     # Computing coordinates and making sure the properties are computed
-    #     Compute2DCoords(mol)
-    #     mol.UpdatePropertyCache()
+        # Setting the ids as a property if requested
+        if at_idx:
+            for idx in range(atoms):
+                mol.GetAtomWithIdx(idx).SetProp(
+                    "molAtomMapNumber", str(mol.GetAtomWithIdx(idx).GetIdx())
+                )
 
-    #     # Drawing the molecule
-    #     dr = Draw.rdMolDraw2D.MolDraw2DCairo(size, size)
-    #     opts = dr.drawOptions()
+        # Computing coordinates and making sure the properties are computed
+        Compute2DCoords(mol)
+        mol.UpdatePropertyCache()
 
-    #     # Transparent background if not writing to file
-    #     if not write_to_path:
-    #         opts.clearBackground = False
+        # Drawing the molecule
+        dr = Draw.rdMolDraw2D.MolDraw2DCairo(size, size)
+        opts = dr.drawOptions()
 
-    #     dr.DrawMolecule(mol)
-    #     dr.FinishDrawing()
+        # Transparent background if not writing to file
+        if not write_to_path:
+            opts.clearBackground = False
 
-    #     # Loading the molecule as a PIL object
-    #     bytes_images = dr.GetDrawingText()
-    #     image = Image.open(io.BytesIO(bytes_images))
+        dr.DrawMolecule(mol)
+        dr.FinishDrawing()
 
-    #     if show:
-    #         image.show()
+        # Loading the molecule as a PIL object
+        bytes_images = dr.GetDrawingText()
+        image = Image.open(io.BytesIO(bytes_images))
 
-    #     if write_to_path:
-    #         # Creating directories if they don't exist
-    #         os.makedirs(os.path.dirname(write_to_path), exist_ok=True)
+        if show:
+            image.show()
 
-    #         # Writing image to disk
-    #         image.save(write_to_path, "PNG")
+        if write_to_path:
+            # Creating directories if they don't exist
+            os.makedirs(os.path.dirname(write_to_path), exist_ok=True)
 
-    #     # return image
+            # Writing image to disk
+            image.save(write_to_path, "PNG")
+
+        # d = Draw.rdMolDraw2D.MolDraw2DCairo(250, 200)  # or MolDraw2DSVG to get SVGs
+        d = Draw.rdMolDraw2D.MolDraw2DCairo(1000, 1000)  # or MolDraw2DSVG to get SVGs
+        # mol.GetAtomWithIdx(2).SetProp("atomNote", "foo")
+        # mol.GetBondWithIdx(0).SetProp("bondNote", "bar")
+        d.drawOptions().addStereoAnnotation = True
+        d.drawOptions().addAtomIndices = True
+        d.DrawMolecule(mol)
+        d.FinishDrawing()
+        d.WriteDrawingText(f"{self.smiles}.png")
+
+        # return image
 
     ############################################################
     #                         ACTIONS                          #
@@ -455,3 +419,31 @@ class MolecularGraph(MoleculeRepresentation):
         else:
             # Changing the bond type
             bond.SetBondType(bond_type)
+
+    def add_group(self, atom_to_link: int, smiles: str, added_group_atom: int) -> None:
+        """Add a group to the molecular graph.
+
+        Args:
+            atom_to_link (int):
+                index of the atom to link the group to
+            smiles (str):
+                SMILES representation of the group to add
+            added_group_atom (int):
+                index of the atom in the group to link to the atom_to_link
+        """
+        group = Chem.MolFromSmiles(smiles)
+        mol = Chem.EditableMol(Chem.CombineMols(self.mol, group))
+
+        # Adding the bond between the group and the molecule
+        mol.AddBond(
+            atom_to_link, self.nb_atoms + added_group_atom, Chem.BondType.SINGLE
+        )
+        self.mol = Chem.rdchem.RWMol(mol.GetMol())
+
+        # Must be done before updating the representation
+        # to avoid error with kekulization
+        # Updating the property cache of atoms
+        for atom in self.mol.GetAtoms():
+            atom.UpdatePropertyCache()
+        # update RDKit representation
+        self.mol.UpdatePropertyCache()

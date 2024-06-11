@@ -72,26 +72,23 @@ class CutAtomMolGraph(Action):
         action_list: list[Action] = []
 
         implicit_valences = mol_graph.implicit_valences
+        charged_or_radical: list[bool] = [
+            mol_graph.atom_charged_or_radical(atom)
+            for atom in range(mol_graph.nb_atoms)
+        ]
 
         for atom_to_cut in range(mol_graph.nb_atoms):
-            # we cannot cut a non mutable atom
-            if not mol_graph.atom_mutability(atom_to_cut):
+            # we cannot cut a charged or radical atom
+            if charged_or_radical[atom_to_cut]:
                 continue
 
-            # if there is two atoms bonded to the atom to cut
-            bonds_to = [
-                atom2_idx
-                for atom2_idx in range(mol_graph.nb_atoms)
-                if mol_graph.bond_type_num(atom_to_cut, atom2_idx) > 0
-            ]
+            # if there is exactly two atoms bonded to the atom to cut
+            bonds_to = mol_graph.atoms_bonded_to(atom_to_cut)
             if len(bonds_to) != 2:
                 continue
 
             atom_1 = bonds_to[0]
             atom_2 = bonds_to[1]
-
-            if mol_graph.bond_type_num(atom_1, atom_2) != 0:
-                continue
 
             # atom_1 to atom_to_cut
             bond_1 = mol_graph.bond_type_num(atom_to_cut, atom_1)
@@ -99,42 +96,64 @@ class CutAtomMolGraph(Action):
             # atom_2 to atom_to_cut
             bond_2 = mol_graph.bond_type_num(atom_to_cut, atom_2)
 
-            mutability_1 = mol_graph.atom_mutability(atom_1)
-            mutability_2 = mol_graph.atom_mutability(atom_2)
+            # atom_1 to atom_2
+            bond_12 = mol_graph.bond_type_num(atom_1, atom_2)
 
-            if not mutability_1 and not mutability_2:
+            charged_or_radical1 = charged_or_radical[atom_1]
+            charged_or_radical2 = charged_or_radical[atom_2]
+
+            if charged_or_radical1 and charged_or_radical2:
                 if bond_1 != bond_2:
                     continue
                 action_list.append(
                     CutAtomMolGraph(
-                        molecule, atom_to_cut, bonds_to[0], bonds_to[1], bond_1
+                        molecule,
+                        atom_to_cut,
+                        atom_1,
+                        atom_2,
+                        bond_1 + bond_12,
                     )
                 )
                 continue
 
             max_valence_1 = implicit_valences[atom_1] + bond_1
             max_valence_2 = implicit_valences[atom_2] + bond_2
-            if not mutability_1 and max_valence_2 >= bond_1:
+
+            if charged_or_radical1 and max_valence_2 >= bond_1:
                 action_list.append(
                     CutAtomMolGraph(
-                        molecule, atom_to_cut, bonds_to[0], bonds_to[1], bond_1
+                        molecule,
+                        atom_to_cut,
+                        atom_1,
+                        atom_2,
+                        bond_1 + bond_12,
                     )
                 )
                 continue
 
-            if not mutability_2 and max_valence_1 >= bond_2:
+            if charged_or_radical2 and max_valence_1 >= bond_2:
                 action_list.append(
                     CutAtomMolGraph(
-                        molecule, atom_to_cut, bonds_to[0], bonds_to[1], bond_2
+                        molecule,
+                        atom_to_cut,
+                        atom_1,
+                        atom_2,
+                        bond_2 + bond_12,
                     )
                 )
                 continue
 
-            if not mutability_1 or not mutability_2:
+            if charged_or_radical1 or charged_or_radical2:
                 continue
 
             action_list.append(
-                CutAtomMolGraph(molecule, atom_to_cut, bonds_to[0], bonds_to[1], 1)
+                CutAtomMolGraph(
+                    molecule,
+                    atom_to_cut,
+                    atom_1,
+                    atom_2,
+                    bond_12 + min(bond_1, bond_2),
+                )
             )
 
         return action_list

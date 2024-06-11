@@ -6,6 +6,9 @@ This module contains the classes for the molecular graph actions.
 from .add_atom import (
     AddAtomMolGraph as AddAtomMolGraph,
 )
+from .add_group import (
+    AddGroupMolGraph as AddGroupMolGraph,
+)
 from .change_bond import (
     ChangeBondMolGraph as ChangeBondMolGraph,
 )

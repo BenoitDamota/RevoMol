@@ -41,6 +41,7 @@ class XXXMolGraph(Action):
         """List possible actions to XXX to the molecular graph."""
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
+        assert mol_graph is not None
 
         action_list: list[Action] = []
 

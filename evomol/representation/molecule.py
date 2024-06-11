@@ -8,7 +8,7 @@ The following page can be useful :
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import ClassVar, TypeVar
+from typing import ClassVar, TypeVar, Any
 
 from rdkit import Chem
 
@@ -208,6 +208,7 @@ class Molecule:
             representation_class(str_id)
             for representation_class in Molecule.representations_class
         ]
+        self._values: dict[str, object] = {}
 
     def list_available_actions_space(self) -> dict[str, list[type[Action]]]:
         """List all available actions space for each representation."""
@@ -247,6 +248,14 @@ class Molecule:
             if isinstance(representation, representation_class):
                 return representation
         raise ValueError(f"No representation found for {representation_class}")
+
+    def value(self, name: str) -> dict[str, Any]:
+        """Return the value of the molecule."""
+        return self._values.get([name], default=None)
+
+    def set_value(self, name: str, value: dict[str, Any]) -> None:
+        """Set the value of the molecule."""
+        self._values[name] = value
 
     @classmethod
     def list_representation_classes(cls) -> list[type[MoleculeRepresentation]]:

@@ -7,6 +7,7 @@ import pytest
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecular_graph_actions import (
     AddAtomMolGraph,
+    AddGroupMolGraph,
     ChangeBondMolGraph,
     CutAtomMolGraph,
     InsertCarbonMolGraph,
@@ -17,6 +18,7 @@ from evomol.representation.molecular_graph_actions import (
 )
 from evomol.representation.molecule import Action, Molecule
 from evomol.representation.smiles import SMILES
+from evomol.representation.molecular_graph_actions.add_group import Group
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -26,7 +28,14 @@ def setup_parameters() -> None:
     Molecule.representations_class = [MolecularGraph]
     Molecule.max_heavy_atoms = 38
     Molecule.accepted_atoms = ["C", "O", "N", "F"]
-    SubstituteAtomMolGraph.init_accepted_substitutions_from_accepted_atoms()
+    AddGroupMolGraph.groups = [
+        Group("C1=CC=CS1", 5, [0]),
+        Group("C1=CC=CC=C1", 6, [0]),
+        Group("[N+](=O)[O-]", 3, [0]),
+        Group("N=[N+]=[N-]", 3, [0]),
+        Group("S(=O)(=O)O", 4, [0]),
+    ]
+
 
 
 def check_actions_smiles(
@@ -46,7 +55,9 @@ def check_actions_smiles(
         new_mols.append(new_mol)
     print(f"Expected: {check_mols}")
     print(f"Got     : {new_mols}")
-    assert len(actions) == len(check_mols)
+    assert len(actions) == len(
+        check_mols
+    ), f"Expected {len(check_mols)} actions, got {len(actions)}"
 
     for new_mol in new_mols:
         checked = False
@@ -93,7 +104,12 @@ def check_actions_smiles(
         ),
         pytest.param(
             "[OH2]",
-            [],
+            [
+                "OC",
+                "OO",
+                "ON",
+                "OF",
+            ],
             id="AddAtom on [OH2]",
         ),
         pytest.param(
@@ -113,12 +129,30 @@ def check_actions_smiles(
         pytest.param(
             "[CH3]O",
             [
+                "C(O)C",
+                "C(O)O",
+                "C(O)N",
+                "C(O)F",
                 "COC",
                 "COO",
                 "CON",
                 "COF",
             ],
             id="AddAtom on [CH3]O",
+        ),
+        pytest.param(
+            "[SH]O",
+            [
+                "S(O)C",
+                "S(O)O",
+                "S(O)N",
+                "S(O)F",
+                "SOC",
+                "SOO",
+                "SON",
+                "SOF",
+            ],
+            id="AddAtom on [SH]O",
         ),
         pytest.param(
             "C[CH2]",
@@ -137,6 +171,10 @@ def check_actions_smiles(
                 "C([C@@H](N)O)O",
                 "C([C@@H](N)O)N",
                 "C([C@@H](N)O)F",
+                "CC(N)(O)C",
+                "CC(N)(O)O",
+                "CC(N)(O)N",
+                "C[C@@](N)(O)F",
                 "C[C@@H](NC)O",
                 "C[C@@H](NO)O",
                 "C[C@@H](NN)O",
@@ -217,19 +255,21 @@ def test_actions_add_atom(smiles: str, check_smiles: list[str]) -> None:
             ],
             id="RemoveAtom on CC[CH3]",
         ),
-        # pytest.param(
-        #     "CC[CH2]",
-        #     [
-        #         "C[CH2]",
-        #         "CC",
-        #     ],
-        #     id="RemoveAtom on CC[CH2]",
-        # ),
-        # pytest.param(
-        #     "C[CH2]C",
-        #     [],
-        #     id="RemoveAtom on C[CH2]C",
-        # ),
+        pytest.param(
+            "CC[CH2]",
+            [
+                "C[CH2]",
+            ],
+            id="RemoveAtom on CC[CH2]",
+        ),
+        pytest.param(
+            "C[CH2]C",
+            [
+                "CC",
+                "CC",
+            ],
+            id="RemoveAtom on C[CH2]C",
+        ),
         pytest.param(
             "c1ccc(cc1)[N+](=O)[O-]",
             [
@@ -241,11 +281,15 @@ def test_actions_add_atom(smiles: str, check_smiles: list[str]) -> None:
             ],
             id="RemoveAtom on c1ccc(cc1)[N+](=O)[O-]",
         ),
-        # pytest.param( # TODO
-        #     "C[C@@H](N)O",
-        #     [],
-        #     id="RemoveAtom on C[C@@H](N)O",
-        # ),
+        pytest.param(
+            "C[C@@H](N)O",
+            [
+                "C(N)O",
+                "CCO",
+                "CCN",
+            ],
+            id="RemoveAtom on C[C@@H](N)O",
+        ),
     ),
 )
 def test_actions_remove_atom(smiles: str, check_smiles: list[str]) -> None:
@@ -300,10 +344,22 @@ def test_actions_remove_atom(smiles: str, check_smiles: list[str]) -> None:
                 "CCC",
                 "C1=CC1",
                 "C1#CC1",
-                "CC[CH2]",
-                "C(C)[CH2]",
+                "CCC",
+                "C1=CC1",
+                "C1#CC1",
+                "C(C)C",
+                "C1C=C1",
+                "C1C#C1",
             ],
             id="ChangeBond on C1C[CH2]1",
+        ),
+        pytest.param(
+            "CC[CH2]",
+            [
+                "C=C[CH2]",
+                "C#C[CH2]",
+            ],
+            id="ChangeBond on CC[CH2]",
         ),
         pytest.param(
             "C1C[N+]1",
@@ -317,9 +373,12 @@ def test_actions_remove_atom(smiles: str, check_smiles: list[str]) -> None:
         pytest.param(
             "C[C@@H](N)O",
             [
+                "C=C(N)O",
                 "C1[C@H](O)N1",
                 "C1=N[C@H]1O",
                 "C1[C@@H](N)O1",
+                "CC(=N)O",
+                "CC(N)=O",
                 "C[C@H]1NO1",
             ],
             id="ChangeBond on C[C@@H](N)O",
@@ -357,6 +416,38 @@ def test_actions_change_bond(smiles: str, check_smiles: list[str]) -> None:
             id="SubstituteAtom on [CH3]",
         ),
         pytest.param(
+            "CN",
+            [
+                "ON",
+                "NN",
+                "FN",
+                "CC",
+                "CO",
+                "CF",
+            ],
+            id="SubstituteAtom on CN",
+        ),
+        pytest.param(
+            "C=N",
+            [
+                "O=N",
+                "N=N",
+                "C=C",
+                "C=O",
+            ],
+            id="SubstituteAtom on C=N",
+        ),
+        pytest.param(
+            "CC=[CH]",
+            [
+                "OC=[CH]",
+                "NC=[CH]",
+                "FC=[CH]",
+                "CN=[CH]",
+            ],
+            id="SubstituteAtom on CC=[CH]",
+        ),
+        pytest.param(
             "[N+]=C",
             [
                 "[N+]=O",
@@ -370,21 +461,20 @@ def test_actions_change_bond(smiles: str, check_smiles: list[str]) -> None:
             id="SubstituteAtom on [N+]=[N+]",
         ),
         pytest.param(
-            "C[C@@H](N)C(=O)O",
+            "C[C@@H](N)O",
             [
-                "O[C@@H](N)C(=O)O",
-                "NC(N)C(=O)O",
-                "F[C@@H](N)C(=O)O",
-                "CC(C)C(=O)O",
-                "C[C@@H](O)C(=O)O",
-                "C[C@@H](F)C(=O)O",
-                "C[C@@H](N)C(=C)O",
-                "C[C@@H](N)C(=N)O",
-                "C[C@@H](N)C(=O)C",
-                "C[C@@H](N)C(=O)N",
-                "C[C@@H](N)C(=O)F",
+                "OC(N)O",
+                "NC(N)O",
+                "F[C@@H](N)O",
+                "CN(N)O",
+                "CC(C)O",
+                "CC(O)O",
+                "C[C@@H](F)O",
+                "CC(N)C",
+                "CC(N)N",
+                "C[C@@H](N)F",
             ],
-            id="SubstituteAtom on C[C@@H](N)C(=O)O",
+            id="SubstituteAtom on C[C@@H](N)O",
         ),
     ),
 )
@@ -412,32 +502,33 @@ def test_actions_substitute(smiles: str, check_smiles: list[str]) -> None:
             id="InsertCarbon on CC",
         ),
         pytest.param(
-            "C=C",
+            "C=N",
             [
-                "CCC",
+                "CCN",
             ],
-            id="InsertCarbon on C=C",
+            id="InsertCarbon on C=N",
         ),
         pytest.param(
-            "C#C",
+            "[N+]=[CH]",
             [
-                "CCC",
+                "[N+]=C=[CH]",
             ],
-            id="InsertCarbon on C#C",
+            id="InsertCarbon on [N+]=[CH]",
         ),
         pytest.param(
-            "C=[N+]",
+            "C=NC",
             [
-                "CC=[N+]",
+                "CCNC",
+                "C=NCC",
             ],
-            id="InsertCarbon on C=[N+]",
+            id="InsertCarbon on C=NC",
         ),
         pytest.param(
-            "[N+]=[N+]",
+            "[CH]=[CH]",
             [
-                "[N+]=C=[N+]",
+                "[CH]=C=[CH]",
             ],
-            id="InsertCarbon on [N+]=[N+]",
+            id="InsertCarbon on [CH]=[CH]",
         ),
         pytest.param(
             "C[NH+]([O-])O",
@@ -469,6 +560,30 @@ def test_actions_substitute(smiles: str, check_smiles: list[str]) -> None:
             ],
             id="InsertCarbon on C#[N+]",
         ),
+        pytest.param(
+            "C[C@@H](N)O",
+            [
+                "CC[C@@H](N)O",
+                "C[C@@H](O)CN",
+                "C[C@@H](N)CO",
+            ],
+            id="InsertCarbon on C[C@@H](N)O",
+        ),
+        pytest.param(
+            "C=[S+]=C",
+            [
+                "CC=[S+]=C",
+                "C=[S+]=CC",
+            ],
+            id="InsertCarbon on C=[S+]=C",
+        ),
+        pytest.param(
+            "[S+]=[S+]",
+            [
+                "[S+]=C=[S+]",
+            ],
+            id="InsertCarbon on [S+]=[S+]",
+        ),
     ),
 )
 def test_actions_insert_carbon(smiles: str, check_smiles: list[str]) -> None:
@@ -490,11 +605,11 @@ def test_actions_insert_carbon(smiles: str, check_smiles: list[str]) -> None:
             id="CutAtom on CCC",
         ),
         pytest.param(
-            "C=C=C",
+            "C=NC",
             [
                 "CC",
             ],
-            id="CutAtom on C=C=C",
+            id="CutAtom on C=NC",
         ),
         pytest.param(
             "[C+]#CC",
@@ -568,6 +683,72 @@ def test_actions_insert_carbon(smiles: str, check_smiles: list[str]) -> None:
             ],
             id="CutAtom on OC=C[CH3]",
         ),
+        pytest.param(
+            "[N+]1=C=[N+]1",
+            [
+                "[N+]#[N+]",
+            ],
+            id="CutAtom on [N+]1=C=[N+]1",
+        ),
+        pytest.param(
+            "[N+]1=C[N+]1",
+            [],
+            id="CutAtom on [N+]1=C[N+]1",
+        ),
+        pytest.param(
+            "N1=C=C1",
+            [
+                "C#C",
+                "N#C",
+                "N#C",
+            ],
+            id="CutAtom on N1=C=C1",
+        ),
+        pytest.param(
+            "N1C=[N+]1",
+            [
+                "C#[N+]",
+                "N#[N+]",
+            ],
+            id="CutAtom on N1C=[N+]1",
+        ),
+        pytest.param(
+            "[N+]1=CN1",
+            [
+                "[N+]#C",
+                "[N+]#N",
+            ],
+            id="CutAtom on [N+]1=CN1",
+        ),
+        pytest.param(
+            "[N+]1C=N1",
+            [
+                "[N+]=C",
+                "[N+]=N",
+            ],
+            id="CutAtom on [N+]1C=N1",
+        ),
+        pytest.param(
+            "N1C=N1",
+            [
+                "C#N",
+                "N=N",
+                "N=C",
+            ],
+            id="CutAtom on N1C=N1",
+        ),
+        pytest.param(
+            "[N+]=C=[CH]",
+            [
+                "[N+]=[CH]",
+            ],
+            id="CutAtom on [N+]=C=[CH]",
+        ),
+        pytest.param(
+            "C[C@@H](N)O",
+            [],
+            id="CutAtom on C[C@@H](N)O",
+        ),
     ),
 )
 def test_actions_cut_atom(smiles: str, check_smiles: list[str]) -> None:
@@ -588,11 +769,13 @@ def test_actions_cut_atom(smiles: str, check_smiles: list[str]) -> None:
                 "C1=C(CC)C=CC=C1",
                 "C1=CC(CC)=CC=C1",
                 "C1=CC=C(CC)C=C1",
+                "C1=CC=CC(CC)=C1",
                 "C1=CC=CC=C1CC",
                 "C1(C)=CC=CC=C1C",
                 "C1=C(C)C=CC=C1C",
                 "C1=CC(C)=CC=C1C",
                 "C1=CC=C(C)C=C1C",
+                "C1=CC=CC(C)=C1C",
             ],
             id="MoveGroup on C1=CC=C[CH]=C1CC",
         ),
@@ -603,6 +786,8 @@ def test_actions_cut_atom(smiles: str, check_smiles: list[str]) -> None:
                 "C1=C(C2=CC=CC=C2)C=CC=C1",
                 "C1=CC(C2=CC=CC=C2)=CC=C1",
                 "C1=CC=C(C2=CC=CC=C2)C=C1",
+                "C1=CC=CC(C2=CC=CC=C2)=C1",
+                "C1=CC=CC=C1C1=CC=CC=C1",
                 "C1=CC=CC=C1C1=CC=CC=C1",
                 "C1=CC=CC=C1C1=CC=CC=C1",
                 "C1=CC=CC=C1C1=CC=CC=C1",
@@ -661,11 +846,104 @@ def test_actions_cut_atom(smiles: str, check_smiles: list[str]) -> None:
             [],
             id="MoveGroup on C1C[N+]1=[N+]1SC1",
         ),
+        pytest.param(
+            "C=NC",
+            [
+                "CCN",
+                "C(=N)C",
+            ],
+            id="MoveGroup on C=NC",
+        ),
+        pytest.param(
+            "[N+]=CN",
+            [
+                "[N+]=NC",
+            ],
+            id="MoveGroup on [N+]=CN",
+        ),
+        pytest.param(
+            "C[C@@H](N)O",
+            [
+                "CNCO",
+                "COCN",
+                "C(CO)N",
+                "CCON",
+                "C(CN)O",
+                "CCNO",
+            ],
+            id="MoveGroup on C[C@@H](N)O",
+        ),
+        pytest.param(
+            "C[C+](N)O",
+            [],
+            id="MoveGroup on C[C+](N)O",
+        ),
+        pytest.param(
+            "S1C([CH2])=CC=C1",
+            [
+                "[SH]1([CH2])C=CC=C1",
+                "S1C=C([CH2])C=C1",
+                "S1C=CC([CH2])=C1",
+                "S1C=CC=C1[CH2]",
+            ],
+            id="MoveGroup on S1C([CH2])=CC=C1",
+        ),
     ),
 )
 def test_actions_move_group(smiles: str, check_smiles: list[str]) -> None:
     """Test the MoveGroup action."""
     check_actions_smiles(smiles, check_smiles, MoveGroupMolGraph)
+
+
+########################################
+#                 AddGroup
+########################################
+@pytest.mark.parametrize(
+    ("smiles", "check_smiles"),
+    (
+        pytest.param(
+            "",
+            [
+                "C1=CC=CS1",
+                "C1=CC=CC=C1",
+                "[N+](=O)[O-]",
+                "N=[N+]=[N-]",
+                "[SH](=O)(=O)O",
+            ],
+            id="AddGroup on empty smiles",
+        ),
+        pytest.param(
+            "[CH2]",
+            [],
+            id="AddGroup on [CH2]",
+        ),
+        pytest.param(
+            "C",
+            [
+                "CC1=CC=CS1",
+                "CC1=CC=CC=C1",
+                "C[N+](=O)[O-]",
+                "CN=[N+]=[N-]",
+                "CS(=O)(=O)O",
+            ],
+            id="AddGroup on C",
+        ),
+        pytest.param(
+            "N[CH2]",
+            [
+                "N([CH2])C1=CC=CS1",
+                "N([CH2])C1=CC=CC=C1",
+                "N([CH2])[N+](=O)[O-]",
+                "N([CH2])N=[N+]=[N-]",
+                "N([CH2])S(=O)(=O)O",
+            ],
+            id="AddGroup on N[CH2]",
+        ),
+    ),
+)
+def test_actions_add_group(smiles: str, check_smiles: list[str]) -> None:
+    """Test the RemoveGroup action."""
+    check_actions_smiles(smiles, check_smiles, AddGroupMolGraph)
 
 
 ########################################
@@ -681,7 +959,12 @@ def test_actions_move_group(smiles: str, check_smiles: list[str]) -> None:
         ),
         pytest.param(
             "C1=CC=C[CH]=C1CC",
-            ["C1=CC=CC=C1", "C1=CC=CC=C1C", "CC", "C"],
+            [
+                "C1=CC=CC=C1",
+                "CC",
+                "C1=CC=CC=C1C",
+                "C",
+            ],
             id="RemoveGroup on C1=CC=C[CH]=C1CC",
         ),
         pytest.param(

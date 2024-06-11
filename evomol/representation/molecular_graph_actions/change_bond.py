@@ -65,13 +65,14 @@ class ChangeBondMolGraph(Action):
         implicit_valences = mol_graph.implicit_valences
         bridge_bonds_matrix = mol_graph.bridge_bonds_matrix
 
-        mutable: list[bool] = [
-            mol_graph.atom_mutability(atom) for atom in range(mol_graph.nb_atoms)
+        charged_or_radical: list[bool] = [
+            mol_graph.atom_charged_or_radical(atom)
+            for atom in range(mol_graph.nb_atoms)
         ]
 
         # for each bond
         for atom1, atom2 in itertools.combinations(range(mol_graph.nb_atoms), 2):
-            if not mutable[atom1] or not mutable[atom2]:
+            if charged_or_radical[atom1] or charged_or_radical[atom2]:
                 continue
 
             current_bond: int = mol_graph.bond_type_num(atom1, atom2)
