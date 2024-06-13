@@ -210,7 +210,7 @@ class MolecularGraph(MoleculeRepresentation):
         symbol: str = self.mol.GetAtomWithIdx(atom_idx).GetSymbol()
         return symbol
 
-    def bond_type_num(self, atom1_idx: int, atom2_idx: int) -> int:
+    def bond_order(self, atom1_idx: int, atom2_idx: int) -> int:
         """Return the bond type between the two atoms.
 
         Args:

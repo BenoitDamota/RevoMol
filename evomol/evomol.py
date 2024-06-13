@@ -18,17 +18,19 @@ from evomol.representation.smiles import SMILES
 
 def main() -> None:
     """Main function."""
-    # neighborhood_tester()
-    evaluation_tester()
-
-
-def neighborhood_tester() -> None:
-    """Test the neighborhood of atoms in a molecule."""
     Molecule.id_representation_class = SMILES
     Molecule.representations_class = [MolecularGraph]
     Molecule.max_heavy_atoms = 38
 
     Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
+
+    # neighborhood_tester()
+
+    evaluation_tester()
+
+
+def neighborhood_tester() -> None:
+    """Test the neighborhood of atoms in a molecule."""
 
     ChangeBondMolGraph.avoid_bond_breaking = False
     RemoveGroupMolGraph.remove_only_smallest = False
@@ -158,28 +160,32 @@ def neighborhood_tester() -> None:
 
 
 def evaluation_tester():
-    import evomol.evaluation.evaluation as eval
+    import evomol.evaluation as eval
 
     evaluations = [
-        eval.LogP(),
-        eval.SAScore(),
-        eval.QED(),
-        eval.CycleScore(),
         eval.CLScore(),
-        eval.IsomerGuacamol(
-            "C9H8O4"
-        ),  # "CC(=O)OC1=CC=CC=C1C(=O)O", "CC(=O)NC1=CC=C(C=C1)O" "C"
-        eval.Rediscovery("C1=CC=CC=C1"),
-        eval.QED(),
-        eval.UnkownGenericCyclicScaffolds("path"),
-        eval.SillyWalks("path", radius=2),
+        eval.CycleScore(),
+        eval.GenericCyclicFeatures(use_zinc=True),
+        eval.GenericCyclicScaffolds(use_zinc=True),
+        eval.Isomer("C9H8O4"),
+        eval.LogP(),
         eval.NPerturbations(),
+        eval.QED(),
         eval.RDFilters(),
+        eval.Rediscovery("C1=CC=CC=C1"),
+        eval.SAScore(),
+        eval.SillyWalks(use_zinc=True, radius=2),
     ]
 
-    smiles = "C"
+    # il n'y a pas de fichier json sur https://github.com/PatWalters/silly_walks
+    # qu'est ce que c'est "data/ECFP/complete_ChEMBL_ecfp4_dict.json" ?
+    smiles = "CC(=O)OC1=CC=CC=C1C(=O)O"
+    smiles = "CC(=O)NC1=CC=C(C=C1)O"
+    smiles = "c1ccccc1"
+    smiles = "C=1=CC1"
+    # smiles = "C"
 
     mol = Molecule(smiles)
 
     for evaluation in evaluations:
-        print(evaluation, evaluation(mol))
+        print(evaluation.name, evaluation.evaluate(mol))

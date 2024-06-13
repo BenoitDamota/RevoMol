@@ -109,7 +109,7 @@ class MoveGroupMolGraph(Action):
             bond_type = (
                 1
                 if not charged_or_radical1 and not charged_or_radical2
-                else mol_graph.bond_type_num(atom1, atom2)
+                else mol_graph.bond_order(atom1, atom2)
             )
 
             # list connected component for each side

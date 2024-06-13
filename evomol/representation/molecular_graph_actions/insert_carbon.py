@@ -84,7 +84,7 @@ class InsertCarbonMolGraph(Action):
         # insert on existing bond of non charged atoms if at least one atom is mutable
         for atom1, atom2 in mol_graph.bonds:
 
-            bond_type = mol_graph.bond_type_num(atom1, atom2)
+            bond_type = mol_graph.bond_order(atom1, atom2)
             charged_or_radical1 = charged_or_radical[atom1]
             charged_or_radical2 = charged_or_radical[atom2]
             # bond exists between the two atoms

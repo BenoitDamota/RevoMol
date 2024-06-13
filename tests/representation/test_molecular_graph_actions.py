@@ -37,7 +37,6 @@ def setup_parameters() -> None:
     ]
 
 
-
 def check_actions_smiles(
     smiles: str, check_smiles: list[str], action_type: type[Action]
 ) -> None:
@@ -958,19 +957,37 @@ def test_actions_add_group(smiles: str, check_smiles: list[str]) -> None:
             id="RemoveGroup on empty smiles",
         ),
         pytest.param(
-            "C1=CC=C[CH]=C1CC",
+            "C1=CC=CC=C1CC",
             [
                 "C1=CC=CC=C1",
-                "CC",
                 "C1=CC=CC=C1C",
-                "C",
             ],
-            id="RemoveGroup on C1=CC=C[CH]=C1CC",
+            id="RemoveGroup on C1=CC=CC=C1CC",
         ),
         pytest.param(
             "c1ccc[S+]1[N+]1[CH]ccocc1",
             [],
             id="RemoveGroup on c1ccc[S+]1[N+]1[CH]ccocc1",
+        ),
+        pytest.param(
+            "C=C",
+            [
+                "C",
+                "C",
+            ],
+            id="RemoveGroup on C=C",
+        ),
+        pytest.param(
+            "C1=CC=CC=C1[CH]C",
+            [],
+            id="RemoveGroup on C1=CC=CC=C1[CH]C",
+        ),
+        pytest.param(
+            "C1=CC=CC=C1C[CH]",
+            [
+                "C1=CC=CC=C1",
+            ],
+            id="RemoveGroup on C1=CC=CC=C1C[CH]",
         ),
     ),
 )

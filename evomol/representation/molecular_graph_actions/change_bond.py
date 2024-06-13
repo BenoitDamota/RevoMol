@@ -75,7 +75,7 @@ class ChangeBondMolGraph(Action):
             if charged_or_radical[atom1] or charged_or_radical[atom2]:
                 continue
 
-            current_bond: int = mol_graph.bond_type_num(atom1, atom2)
+            current_bond: int = mol_graph.bond_order(atom1, atom2)
 
             # the max bond that can be formed between atom1 and atom2
             # is the minimum of the implicit valence of the two atoms

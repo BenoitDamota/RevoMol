@@ -251,7 +251,7 @@ class Molecule:
 
     def value(self, name: str) -> dict[str, Any]:
         """Return the value of the molecule."""
-        return self._values.get([name], default=None)
+        return self._values.get(name, None)
 
     def set_value(self, name: str, value: dict[str, Any]) -> None:
         """Set the value of the molecule."""

@@ -91,13 +91,13 @@ class CutAtomMolGraph(Action):
             atom_2 = bonds_to[1]
 
             # atom_1 to atom_to_cut
-            bond_1 = mol_graph.bond_type_num(atom_to_cut, atom_1)
+            bond_1 = mol_graph.bond_order(atom_to_cut, atom_1)
 
             # atom_2 to atom_to_cut
-            bond_2 = mol_graph.bond_type_num(atom_to_cut, atom_2)
+            bond_2 = mol_graph.bond_order(atom_to_cut, atom_2)
 
             # atom_1 to atom_2
-            bond_12 = mol_graph.bond_type_num(atom_1, atom_2)
+            bond_12 = mol_graph.bond_order(atom_1, atom_2)
 
             charged_or_radical1 = charged_or_radical[atom_1]
             charged_or_radical2 = charged_or_radical[atom_2]

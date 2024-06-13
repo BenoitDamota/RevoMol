@@ -33,7 +33,9 @@ class RemoveGroupMolGraph(Action):
     Remove a group of connected atoms from the molecular graph.
     """
 
-    remove_only_smallest: bool = False
+    remove_only_smallest: bool = True
+    remove_only_single_bond: bool = False
+    remove_charged_or_radical: bool = True
 
     def __init__(
         self,
@@ -102,7 +104,12 @@ class RemoveGroupMolGraph(Action):
         bridges = [
             (atom1, atom2)
             for atom1, atom2 in mol_graph.bridge_bonds
-            if not charged_or_radical[atom1] and not charged_or_radical[atom2]
+            if not charged_or_radical[atom1]
+            and not charged_or_radical[atom2]
+            and (
+                not cls.remove_only_single_bond
+                or mol_graph.bond_order(atom1, atom2) == 1
+            )
         ]
 
         # No possible action if no bridge bond
@@ -131,45 +138,33 @@ class RemoveGroupMolGraph(Action):
                 else:
                     component2.append(atom)
 
-            any_charged1 = any(charged_or_radical[atom] for atom in component1)
-            any_charged2 = any(charged_or_radical[atom] for atom in component2)
+            can_remove_1: bool = (
+                cls.remove_charged_or_radical
+                or not any(charged_or_radical[atom] for atom in component1)
+            ) and (not cls.remove_only_smallest or len(component1) <= len(component2))
 
-            if any_charged1 and any_charged2:
-                continue
+            can_remove_2: bool = (
+                cls.remove_charged_or_radical
+                or not any(charged_or_radical[atom] for atom in component2)
+                and (not cls.remove_only_smallest or len(component2) <= len(component1))
+            )
 
-            if cls.remove_only_smallest:
-                if len(component1) <= len(component2) and not any_charged1:
-                    action_list.append(
-                        RemoveGroupMolGraph(
-                            molecule,
-                            bridge_atom_to_keep=atom2,
-                            bridge_atom_to_remove=atom1,
-                        )
+            if can_remove_1:
+                action_list.append(
+                    RemoveGroupMolGraph(
+                        molecule,
+                        bridge_atom_to_keep=atom2,
+                        bridge_atom_to_remove=atom1,
                     )
-                if len(component2) <= len(component1) and not any_charged2:
-                    action_list.append(
-                        RemoveGroupMolGraph(
-                            molecule,
-                            bridge_atom_to_keep=atom1,
-                            bridge_atom_to_remove=atom2,
-                        )
+                )
+
+            if can_remove_2:
+                action_list.append(
+                    RemoveGroupMolGraph(
+                        molecule,
+                        bridge_atom_to_keep=atom1,
+                        bridge_atom_to_remove=atom2,
                     )
-            else:
-                if not any_charged2:
-                    action_list.append(
-                        RemoveGroupMolGraph(
-                            molecule,
-                            bridge_atom_to_keep=atom1,
-                            bridge_atom_to_remove=atom2,
-                        )
-                    )
-                if not any_charged1:
-                    action_list.append(
-                        RemoveGroupMolGraph(
-                            molecule,
-                            bridge_atom_to_keep=atom2,
-                            bridge_atom_to_remove=atom1,
-                        )
-                    )
+                )
 
         return action_list
