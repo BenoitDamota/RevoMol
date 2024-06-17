@@ -5,20 +5,10 @@ Tests for the molecular graph actions.
 import pytest
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecular_graph_actions import (
-    AddAtomMolGraph,
-    AddGroupMolGraph,
-    ChangeBondMolGraph,
-    CutAtomMolGraph,
-    InsertCarbonMolGraph,
-    MoveGroupMolGraph,
-    RemoveAtomMolGraph,
-    RemoveGroupMolGraph,
-    SubstituteAtomMolGraph,
-)
+
+from evomol.action import molecular_graph as mg
 from evomol.representation.molecule import Action, Molecule
 from evomol.representation.smiles import SMILES
-from evomol.representation.molecular_graph_actions.add_group import Group
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -28,12 +18,12 @@ def setup_parameters() -> None:
     Molecule.representations_class = [MolecularGraph]
     Molecule.max_heavy_atoms = 38
     Molecule.accepted_atoms = ["C", "O", "N", "F"]
-    AddGroupMolGraph.groups = [
-        Group("C1=CC=CS1", 5, [0]),
-        Group("C1=CC=CC=C1", 6, [0]),
-        Group("[N+](=O)[O-]", 3, [0]),
-        Group("N=[N+]=[N-]", 3, [0]),
-        Group("S(=O)(=O)O", 4, [0]),
+    mg.AddGroupMolGraph.groups = [
+        mg.add_group.Group("C1=CC=CS1", 5, [0]),
+        mg.add_group.Group("C1=CC=CC=C1", 6, [0]),
+        mg.add_group.Group("[N+](=O)[O-]", 3, [0]),
+        mg.add_group.Group("N=[N+]=[N-]", 3, [0]),
+        mg.add_group.Group("S(=O)(=O)O", 4, [0]),
     ]
 
 
@@ -209,7 +199,7 @@ def check_actions_smiles(
 )
 def test_actions_add_atom(smiles: str, check_smiles: list[str]) -> None:
     """Test the AddAtom action."""
-    check_actions_smiles(smiles, check_smiles, AddAtomMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.AddAtomMolGraph)
 
 
 ########################################
@@ -293,7 +283,7 @@ def test_actions_add_atom(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_remove_atom(smiles: str, check_smiles: list[str]) -> None:
     """Test the RemoveAtom action."""
-    check_actions_smiles(smiles, check_smiles, RemoveAtomMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.RemoveAtomMolGraph)
 
 
 ########################################
@@ -386,7 +376,7 @@ def test_actions_remove_atom(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_change_bond(smiles: str, check_smiles: list[str]) -> None:
     """Test the ChangeBond action."""
-    check_actions_smiles(smiles, check_smiles, ChangeBondMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.ChangeBondMolGraph)
 
 
 ########################################
@@ -479,7 +469,7 @@ def test_actions_change_bond(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_substitute(smiles: str, check_smiles: list[str]) -> None:
     """Test the SubstituteAtom action."""
-    check_actions_smiles(smiles, check_smiles, SubstituteAtomMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.SubstituteAtomMolGraph)
 
 
 ########################################
@@ -587,7 +577,7 @@ def test_actions_substitute(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_insert_carbon(smiles: str, check_smiles: list[str]) -> None:
     """Test the InsertCarbon action."""
-    check_actions_smiles(smiles, check_smiles, InsertCarbonMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.InsertCarbonMolGraph)
 
 
 ########################################
@@ -752,7 +742,7 @@ def test_actions_insert_carbon(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_cut_atom(smiles: str, check_smiles: list[str]) -> None:
     """Test the CutAtom action."""
-    check_actions_smiles(smiles, check_smiles, CutAtomMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.CutAtomMolGraph)
 
 
 ########################################
@@ -891,7 +881,7 @@ def test_actions_cut_atom(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_move_group(smiles: str, check_smiles: list[str]) -> None:
     """Test the MoveGroup action."""
-    check_actions_smiles(smiles, check_smiles, MoveGroupMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.MoveGroupMolGraph)
 
 
 ########################################
@@ -942,7 +932,7 @@ def test_actions_move_group(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_add_group(smiles: str, check_smiles: list[str]) -> None:
     """Test the RemoveGroup action."""
-    check_actions_smiles(smiles, check_smiles, AddGroupMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.AddGroupMolGraph)
 
 
 ########################################
@@ -993,7 +983,7 @@ def test_actions_add_group(smiles: str, check_smiles: list[str]) -> None:
 )
 def test_actions_remove_group(smiles: str, check_smiles: list[str]) -> None:
     """Test the RemoveGroup action."""
-    check_actions_smiles(smiles, check_smiles, RemoveGroupMolGraph)
+    check_actions_smiles(smiles, check_smiles, mg.RemoveGroupMolGraph)
 
 
 # @pytest.mark.usefixtures("setup_parameters")

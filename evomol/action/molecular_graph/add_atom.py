@@ -1,5 +1,10 @@
 """
-Add an atom to a molecular graph.
+The action consists in adding a new atom (among the list
+Molecule.accepted_atoms) to the molecular graph.
+If the molecule is empty, the atom becomes the only atom in the molecule;
+otherwise, it must be connected to an existing atom.
+The atom can only be added if the number of atoms in the molecule is less than
+Molecule.max_heavy_atoms and can only be attached to a mutable atom.
 """
 
 from copy import copy
@@ -16,6 +21,14 @@ class AddAtomMolGraph(Action):
     """
 
     def __init__(self, molecule: Molecule, index_atom: int, atom_type: str) -> None:
+        """Add an atom to the molecular graph.
+
+        Args:
+            molecule (Molecule): Molecule to which the atom is added
+            index_atom (int): index of the atom to bond to the new atom,
+            0 if the molecule is empty
+            atom_type (str): type of the new atom
+        """
         super().__init__(molecule)
         # index of the atom to bond to the new atom
         self.index_atom: int = index_atom
@@ -24,6 +37,15 @@ class AddAtomMolGraph(Action):
 
     @override
     def apply(self) -> Molecule:
+        """An atom is created with the given type and connected to the atom at
+        index_atom.
+
+        Raises:
+            e: e
+
+        Returns:
+            Molecule: _description_
+        """
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
         new_mol_graph: MolecularGraph = copy(mol_graph)

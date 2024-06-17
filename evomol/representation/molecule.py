@@ -96,6 +96,17 @@ class Action(ABC):
         return cls.__name__
 
 
+class ActionError(Exception):
+    """Error raised when an action is not applicable to a molecule."""
+
+    def __init__(self, action: Action, molecule: Molecule):
+        self.action: Action = action
+        self.molecule: Molecule = molecule
+
+    def __str__(self) -> str:
+        return f"Action {self.action} not applicable to molecule {self.molecule}"
+
+
 # TypeAction = TypeVar("TypeAction", bound=Action)
 
 
@@ -110,22 +121,6 @@ class MoleculeRepresentation(ABC):
     by the action_space attribute.
     This attribute must be defined in the child class to give the ability to
     list all possible actions for a molecule.
-    To set the possible neighbors :
-        YourMoleculeRepresentationClass.set_action_spaces(
-            [
-                Action1,
-                Action2,
-                ...,
-            ]
-        )
-
-        # or
-        YourMoleculeRepresentationClass.action_space = [
-            Action1,
-            Action2,
-            ...,
-        ]
-
     """
 
     # possible action space for the molecule representation
@@ -274,6 +269,3 @@ class Molecule:
             and self.id_representation == value.id_representation
             and self.representations == value.representations
         )
-
-
-# voir pour faire des tests avec des neighborhood strategies et appliquer k actions

@@ -1,17 +1,7 @@
 """Main module."""
 
 from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecular_graph_actions import (
-    AddAtomMolGraph,
-    AddGroupMolGraph,
-    ChangeBondMolGraph,
-    CutAtomMolGraph,
-    InsertCarbonMolGraph,
-    MoveGroupMolGraph,
-    RemoveAtomMolGraph,
-    RemoveGroupMolGraph,
-    SubstituteAtomMolGraph,
-)
+from evomol.action import molecular_graph as mg
 from evomol.representation.molecule import Molecule, pprint_action_space
 from evomol.representation.smiles import SMILES
 
@@ -24,26 +14,26 @@ def main() -> None:
 
     Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
 
-    # neighborhood_tester()
+    neighborhood_tester()
 
-    evaluation_tester()
+    # evaluation_tester()
 
 
 def neighborhood_tester() -> None:
     """Test the neighborhood of atoms in a molecule."""
 
-    ChangeBondMolGraph.avoid_bond_breaking = False
-    RemoveGroupMolGraph.remove_only_smallest = False
+    mg.ChangeBondMolGraph.avoid_bond_breaking = False
+    mg.RemoveGroupMolGraph.remove_only_smallest = False
     MolecularGraph.action_space = [
-        # AddAtomMolGraph,
-        AddGroupMolGraph,
-        # ChangeBondMolGraph,
-        # CutAtomMolGraph,
-        # InsertCarbonMolGraph,
-        # MoveGroupMolGraph,
-        # RemoveAtomMolGraph,
-        # RemoveGroupMolGraph,
-        # SubstituteAtomMolGraph,
+        mg.AddAtomMolGraph,
+        mg.AddGroupMolGraph,
+        mg.ChangeBondMolGraph,
+        mg.CutAtomMolGraph,
+        mg.InsertCarbonMolGraph,
+        mg.MoveGroupMolGraph,
+        mg.RemoveAtomMolGraph,
+        mg.RemoveGroupMolGraph,
+        mg.SubstituteAtomMolGraph,
     ]
 
     smiles = "C[C@H](N)O"
