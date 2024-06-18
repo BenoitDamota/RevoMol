@@ -2,9 +2,8 @@
 
 import evomol.evaluation as evaluator
 from evomol.action import molecular_graph as mg
-from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Molecule, pprint_action_space
-from evomol.representation.smiles import SMILES
+from evomol.action import pprint_action_space
+from evomol.representation import SMILES, MolecularGraph, Molecule
 
 
 def main() -> None:
@@ -15,7 +14,7 @@ def main() -> None:
 
     Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
 
-    # neighborhood_tester()
+    neighborhood_tester()
 
     evaluation_tester()
 

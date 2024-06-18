@@ -4,7 +4,7 @@ This module contains the abstract class Evaluation.
 
 from abc import ABC, abstractmethod
 
-from evomol.representation.molecule import Molecule
+from evomol.representation import Molecule
 
 
 class Evaluation(ABC):

@@ -5,11 +5,11 @@ Module to define the neighborhood strategy for a molecule representation.
 import random
 from abc import ABC, abstractmethod
 
-from evomol.representation.molecule import (
+from evomol.action import (
     Action,
-    Molecule,
     pprint_action_space,
 )
+from evomol.representation import Molecule
 
 
 class NeighborhoodStrategy(ABC):

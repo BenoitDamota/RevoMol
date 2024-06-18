@@ -10,112 +10,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import ClassVar, TypeVar
 
-from rdkit import Chem
+import evomol.action.action as action_module  # pylint: disable=cyclic-import
 
 # Maximum valence for sulfur
 SULFUR_MAX_VALENCE = 6
-
-
-def max_valence(atom: str) -> int:
-    """Return the maximum valence of an atom.
-    Valence for sulfur is set with the SULFUR_MAX_VALENCE constant
-    (set to 6 by default).
-
-    Args:
-        atom (str): atom symbol
-
-    Returns:
-        int: valence of the atom
-    """
-    if atom == "S":
-        return SULFUR_MAX_VALENCE
-
-    valence: int = Chem.GetPeriodicTable().GetDefaultValence(
-        Chem.GetPeriodicTable().GetAtomicNumber(atom)
-    )
-    return valence
-
-
-def pprint_action_space(
-    action_list: dict[str, dict[str, list[Action]]],
-) -> None:
-    """Pretty print the action space of a molecule."""
-    nb_actions = 0
-    print(f"{len(action_list)} representations: ")
-    for representation, action_spaces in action_list.items():
-        print(repr(representation))
-        print(f"\t{len(action_spaces.keys())} actions space :")
-        for action_space, actions in action_spaces.items():
-            print(f"\t{action_space}")
-            print(f"\t\t{len(actions)} actions :")
-            for action in actions:
-                print(f"\t\t{action}")
-                nb_actions += 1
-    print(f"Nb actions: {nb_actions}")
-
-
-class ActionContext(ABC):
-    """
-    Context of an action.
-
-    The context is used to define the environment in which the action is
-    applied.
-    """
-
-    def __init__(self, molecule: Molecule) -> None:
-        self.molecule: Molecule = molecule
-
-    @abstractmethod
-    def get(self) -> object:
-        """Return the context of the action."""
-
-
-class Action(ABC):
-    """
-    Action to apply to a molecule representation.
-
-    Apply function creates a new molecule based on the old one and apply the
-    action to it.
-    """
-
-    def __init__(self, molecule: Molecule) -> None:
-        self.molecule: Molecule = molecule
-
-    @abstractmethod
-    def apply(self) -> Molecule:
-        """Apply the action"""
-
-    @classmethod
-    @abstractmethod
-    def list_actions(cls, molecule: Molecule) -> list[Action]:
-        """List all possible actions for the molecule"""
-
-    @classmethod
-    def class_name(cls) -> str:
-        """Return the class name of the action."""
-        return cls.__name__
-
-
-class ActionError(Exception):
-    """Error raised when an action is not applicable to a molecule."""
-
-    def __init__(self, action: Action, new_smiles: str, message: str) -> None:
-        """Initialize the mutation error.
-
-        Args:
-            action (type[Action]): Action that caused the error
-            new_smiles (str): SMILES after the mutation
-            message (str): message of the error
-        """
-        self.message: str = (
-            f"Action {action} caused an error. "
-            f"New SMILES: {new_smiles}. "
-            f"Message: {message}"
-        )
-        super().__init__(self.message)
-
-    def __str__(self) -> str:
-        return self.message
 
 
 class MoleculeRepresentation(ABC):
@@ -132,28 +30,22 @@ class MoleculeRepresentation(ABC):
     """
 
     # possible action space for the molecule representation
-    action_space: ClassVar[list[type[Action]]] = []
+    action_space: ClassVar[list[type[action_module.Action]]] = []
 
     def __init__(self, str_id: str):
         """init the molecule representation from a string."""
         self.str_id: str = str_id
 
     @classmethod
-    def set_action_space(cls, action_space: list[type[Action]]) -> None:
+    def set_action_space(
+        cls,
+        action_space: list[type[action_module.Action]],
+    ) -> None:
         """Set the possible action space for the molecule representation."""
         cls.action_space = action_space
 
-    def list_all_actions(self, molecule: Molecule) -> dict[str, list[Action]]:
-        """
-        List all possible Action for each Action of the molecule representation
-        """
-        return {
-            action.class_name(): action.list_actions(molecule)
-            for action in self.action_space
-        }
-
     @classmethod
-    def list_action_spaces(cls) -> list[type[Action]]:
+    def list_action_spaces(cls) -> list[type[action_module.Action]]:
         """List all possible actions for the molecule representation."""
         return cls.action_space
 
@@ -213,7 +105,9 @@ class Molecule:
         ]
         self._values: dict[str, object] = {}
 
-    def list_available_actions_space(self) -> dict[str, list[type[Action]]]:
+    def list_available_actions_space(
+        self,
+    ) -> dict[str, list[type[action_module.Action]]]:
         """List all available actions space for each representation."""
         return {
             representation.class_name(): representation.action_space
@@ -221,7 +115,9 @@ class Molecule:
             if representation.action_space
         }
 
-    def list_all_possible_actions(self) -> dict[str, dict[str, list[Action]]]:
+    def list_all_possible_actions(
+        self,
+    ) -> dict[str, dict[str, list[action_module.Action]]]:
         """List all possible actions for the molecule."""
         # make sure that the possible action is not empty
         possible_actions = {}

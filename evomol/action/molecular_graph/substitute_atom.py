@@ -4,10 +4,32 @@ Substitute an atom in the molecular graph.
 
 from typing_extensions import override
 
-from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, Molecule, max_valence
+from rdkit import Chem
+
+from evomol.action import Action
+from evomol.representation import MolecularGraph, Molecule, SULFUR_MAX_VALENCE
 
 from .action_molecular_graph import ActionMolGraph
+
+
+def max_valence(atom: str) -> int:
+    """Return the maximum valence of an atom.
+    Valence for sulfur is set with the SULFUR_MAX_VALENCE constant
+    (set to 6 by default).
+
+    Args:
+        atom (str): atom symbol
+
+    Returns:
+        int: valence of the atom
+    """
+    if atom == "S":
+        return SULFUR_MAX_VALENCE
+
+    valence: int = Chem.GetPeriodicTable().GetDefaultValence(
+        Chem.GetPeriodicTable().GetAtomicNumber(atom)
+    )
+    return valence
 
 
 class SubstituteAtomMolGraph(ActionMolGraph):

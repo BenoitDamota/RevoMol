@@ -8,7 +8,7 @@ from typing import Any
 from typing_extensions import override
 
 from evomol.evaluation.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.representation import Molecule
 
 
 class NPerturbations(Evaluation):

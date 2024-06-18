@@ -5,8 +5,8 @@ Move a group of atoms in a molecular graph.
 import rdkit
 from typing_extensions import override
 
-from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, Molecule
+from evomol.action import Action
+from evomol.representation import MolecularGraph, Molecule
 
 from .action_molecular_graph import ActionMolGraph
 

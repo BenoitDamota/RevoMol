@@ -14,8 +14,8 @@ from copy import copy
 
 from typing_extensions import override
 
-from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Action, ActionError, Molecule
+from evomol.action import Action, ActionError
+from evomol.representation import MolecularGraph, Molecule
 
 
 class ActionMolGraph(Action):

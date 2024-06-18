@@ -8,8 +8,7 @@ from rdkit import Chem
 from typing_extensions import override
 
 from evomol.evaluation.evaluation import Evaluation
-from evomol.representation.molecular_graph import MolecularGraph
-from evomol.representation.molecule import Molecule
+from evomol.representation import MolecularGraph, Molecule
 
 
 class QED(Evaluation):
