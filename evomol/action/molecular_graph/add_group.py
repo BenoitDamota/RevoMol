@@ -2,7 +2,6 @@
 Add a group of atoms to the molecular graph.
 """
 
-from copy import copy
 from dataclasses import dataclass
 
 from typing_extensions import override
@@ -10,15 +9,21 @@ from typing_extensions import override
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
+
 
 @dataclass
 class Group:
+    """
+    Group of atoms to add to the molecular graph.
+    """
+
     smiles: str
     nb_atoms: int
     positions_to_link: list[int]
 
 
-class AddGroupMolGraph(Action):
+class AddGroupMolGraph(ActionMolGraph):
     """
     Add a group of atoms to the molecular graph.
     """
@@ -36,7 +41,7 @@ class AddGroupMolGraph(Action):
         molecule: Molecule,
         atom_to_link: int,
         smiles: str,
-        added_group_atom: str,
+        added_group_atom: int,
     ) -> None:
         super().__init__(molecule)
         self.atom_to_link: int = atom_to_link
@@ -44,28 +49,19 @@ class AddGroupMolGraph(Action):
         self.added_group_atom: int = added_group_atom
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         if new_mol_graph.nb_atoms == 0:
             # If the molecule is empty
             # the new molecular graph is the group
-            new_mol_graph = MolecularGraph(self.smiles)
-        else:
-            # Add the group to the molecular graph
-            new_mol_graph.add_group(
-                self.atom_to_link, self.smiles, self.added_group_atom
-            )
+            new_mol_graph.change_smiles(self.smiles)
+            return
 
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Adding group caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
+        # Add the group to the molecular graph
+        new_mol_graph.add_group(
+            self.atom_to_link,
+            self.smiles,
+            self.added_group_atom,
+        )
 
     def __repr__(self) -> str:
         return f"AddGroupMolGraph({self.molecule}, {self.smiles}, {self.atom_to_link})"

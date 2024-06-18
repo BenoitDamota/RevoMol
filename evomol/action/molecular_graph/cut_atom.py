@@ -2,15 +2,15 @@
 Cut an atom from the molecular graph.
 """
 
-from copy import copy
-
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class CutAtomMolGraph(Action):
+
+class CutAtomMolGraph(ActionMolGraph):
     """
     Cut an atom from the molecular graph.
     """
@@ -32,12 +32,7 @@ class CutAtomMolGraph(Action):
         self.bond_type: int = bond_type
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # remove bonds
         new_mol_graph.set_bond(self.atom_to_cut, self.atom1_to_bond, 0)
         new_mol_graph.set_bond(self.atom_to_cut, self.atom2_to_bond, 0)
@@ -46,14 +41,6 @@ class CutAtomMolGraph(Action):
         new_mol_graph.set_bond(self.atom1_to_bond, self.atom2_to_bond, self.bond_type)
 
         new_mol_graph.remove_atom(self.atom_to_cut)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Cut caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (

@@ -2,16 +2,16 @@
 Move a group of atoms in a molecular graph.
 """
 
-from copy import copy
-
-from typing_extensions import override
 import rdkit
+from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class MoveGroupMolGraph(Action):
+
+class MoveGroupMolGraph(ActionMolGraph):
     """
     Move a group of atoms at a different position in the molecular graph.
     """
@@ -33,26 +33,12 @@ class MoveGroupMolGraph(Action):
         self.bond_type: int = bond_type
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # Removing the bond
         new_mol_graph.set_bond(self.atom_moving, self.atom_staying, 0)
 
         # Setting the new bond
         new_mol_graph.set_bond(self.atom_moving, self.atom_to_link, self.bond_type)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Move group caused an error.")
-            print("SMILES before: " + mol_graph.smiles)
-            print("SMILES after: " + new_mol_graph.smiles)
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (

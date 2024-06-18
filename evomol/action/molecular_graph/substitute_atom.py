@@ -2,15 +2,18 @@
 Substitute an atom in the molecular graph.
 """
 
-from copy import copy
-
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule, max_valence
 
+from .action_molecular_graph import ActionMolGraph
 
-class SubstituteAtomMolGraph(Action):
+
+class SubstituteAtomMolGraph(ActionMolGraph):
+    """
+    Substitute an atom in the molecular graph.
+    """
 
     def __init__(self, molecule: Molecule, atom_idx: int, new_type: str) -> None:
         super().__init__(molecule)
@@ -18,20 +21,8 @@ class SubstituteAtomMolGraph(Action):
         self.new_type: str = new_type
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         new_mol_graph.replace_atom(self.atom_idx, self.new_type)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Substitution atom caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (

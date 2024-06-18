@@ -2,16 +2,16 @@
 Remove an atom from the molecular graph.
 """
 
-from copy import copy
-
 import networkx as nx
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class RemoveAtomMolGraph(Action):
+
+class RemoveAtomMolGraph(ActionMolGraph):
     """
     Remove an atom from the molecular graph.
     """
@@ -22,21 +22,9 @@ class RemoveAtomMolGraph(Action):
         self.atom_idx: int = atom_idx
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # Removing the atom
         new_mol_graph.remove_atom(self.atom_idx)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Remove atom caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return f"RemoveAtomMolGraph({self.molecule}, {self.atom_idx})"

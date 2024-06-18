@@ -3,15 +3,16 @@ Change bond for molecular graph representation.
 """
 
 import itertools
-from copy import copy
 
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class ChangeBondMolGraph(Action):
+
+class ChangeBondMolGraph(ActionMolGraph):
     """
     Changing a bond from any type to any type among no bond, single, double, triple.
 
@@ -32,20 +33,8 @@ class ChangeBondMolGraph(Action):
         self.bond_type: int = bond_type
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         new_mol_graph.set_bond(self.atom1, self.atom2, self.bond_type)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Change bond caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (

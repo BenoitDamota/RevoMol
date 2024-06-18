@@ -2,15 +2,15 @@
 Insert a carbon in the molecular graph between two atoms that have no formal charge.
 """
 
-from copy import copy
-
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class InsertCarbonMolGraph(Action):
+
+class InsertCarbonMolGraph(ActionMolGraph):
     """
     Insert a carbon in the molecular graph between two atoms that have no formal charge.
     The new carbon is bonded with two single bonds to the two atoms.
@@ -33,11 +33,7 @@ class InsertCarbonMolGraph(Action):
         self.bond_to_2: int = bond_to_2
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # Removing bond between atoms
         new_mol_graph.set_bond(self.atom1_idx_to_bond, self.atom2_idx_to_bond, 0)
 
@@ -48,14 +44,6 @@ class InsertCarbonMolGraph(Action):
         # Creating a bond from the last inserted atom to the existing ones
         new_mol_graph.set_bond(new_atom_idx, self.atom1_idx_to_bond, self.bond_to_1)
         new_mol_graph.set_bond(new_atom_idx, self.atom2_idx_to_bond, self.bond_to_2)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Insert Carbon caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return (

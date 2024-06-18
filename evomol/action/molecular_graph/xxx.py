@@ -2,15 +2,15 @@
 Example of a molecular graph action.
 """
 
-from copy import copy
-
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class XXXMolGraph(Action):
+
+class XXXMolGraph(ActionMolGraph):
     """
     XXX to the molecular graph.
     """
@@ -19,18 +19,8 @@ class XXXMolGraph(Action):
     #     super().__init__(molecule)
 
     @override
-    def apply(self) -> Molecule:
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("XXX caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
+        _ = new_mol_graph
 
     def __repr__(self) -> str:
         return f"XXXMolGraph({self.molecule})"

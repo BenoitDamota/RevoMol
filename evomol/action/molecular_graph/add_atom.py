@@ -7,15 +7,15 @@ The atom can only be added if the number of atoms in the molecule is less than
 Molecule.max_heavy_atoms and can only be attached to a mutable atom.
 """
 
-from copy import copy
-
 from typing_extensions import override
 
 from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 
+from .action_molecular_graph import ActionMolGraph
 
-class AddAtomMolGraph(Action):
+
+class AddAtomMolGraph(ActionMolGraph):
     """
     Add an atom to the molecular graph.
     """
@@ -36,34 +36,16 @@ class AddAtomMolGraph(Action):
         self.atom_type: str = atom_type
 
     @override
-    def apply(self) -> Molecule:
+    def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         """An atom is created with the given type and connected to the atom at
         index_atom.
-
-        Raises:
-            e: e
-
-        Returns:
-            Molecule: _description_
         """
-        mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
-        assert mol_graph is not None
-        new_mol_graph: MolecularGraph = copy(mol_graph)
-
         # Adding the atom
         new_mol_graph.add_atom(self.atom_type)
 
         if new_mol_graph.nb_atoms > 1:
             # Creating a bond from the last inserted atom to the existing one
             new_mol_graph.set_bond(new_mol_graph.nb_atoms - 1, self.index_atom, 1)
-
-        try:
-            new_mol_graph.update_representation()
-        except Exception as e:
-            print("Addition caused an error.")
-            raise e
-
-        return Molecule(new_mol_graph.smiles)
 
     def __repr__(self) -> str:
         return f"AddAtomMolGraph({self.molecule}, {self.index_atom}, {self.atom_type})"
