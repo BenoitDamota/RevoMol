@@ -38,14 +38,18 @@ class SMILES(MoleculeRepresentation):
 
     @override
     def representation(self) -> str:
-        return (
-            f"{link('http://hulab.rxnfinder.org/smi2img/' + self.smiles, self.smiles)}"
-            if self.smiles
-            else "Empty SMILES"
-        )
+        return self.smiles if self.smiles else "Empty SMILES"
+        # return (
+        #     f"{
+        # link('http://hulab.rxnfinder.org/smi2img/' + self.smiles,
+        # self.smiles)}"
+        #     if self.smiles
+        #     else "Empty SMILES"
+        # )
 
     def __repr__(self) -> str:
-        return f'SMILES("{self.representation()}")'
+        return f'SMILES("{self.smiles}")'
+        # return f'SMILES("{self.representation()}")'
 
     def __eq__(self, value: object) -> bool:
         return isinstance(value, SMILES) and self.smiles == value.smiles

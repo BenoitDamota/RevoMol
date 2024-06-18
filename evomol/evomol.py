@@ -1,7 +1,8 @@
 """Main module."""
 
-from evomol.representation.molecular_graph import MolecularGraph
+import evomol.evaluation as evaluator
 from evomol.action import molecular_graph as mg
+from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Molecule, pprint_action_space
 from evomol.representation.smiles import SMILES
 
@@ -14,9 +15,9 @@ def main() -> None:
 
     Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
 
-    neighborhood_tester()
+    # neighborhood_tester()
 
-    # evaluation_tester()
+    evaluation_tester()
 
 
 def neighborhood_tester() -> None:
@@ -149,22 +150,22 @@ def neighborhood_tester() -> None:
                 # print()
 
 
-def evaluation_tester():
-    import evomol.evaluation as eval
+def evaluation_tester() -> None:
+    """Test the evaluation of a molecule."""
 
     evaluations = [
-        eval.CLScore(),
-        eval.CycleScore(),
-        eval.GenericCyclicFeatures(use_zinc=True),
-        eval.GenericCyclicScaffolds(use_zinc=True),
-        eval.Isomer("C9H8O4"),
-        eval.LogP(),
-        eval.NPerturbations(),
-        eval.QED(),
-        eval.RDFilters(),
-        eval.Rediscovery("C1=CC=CC=C1"),
-        eval.SAScore(),
-        eval.SillyWalks(use_zinc=True, radius=2),
+        evaluator.CLScore(),
+        evaluator.CycleScore(),
+        evaluator.GenericCyclicFeatures(),
+        evaluator.GenericCyclicScaffolds(),
+        evaluator.Isomer("C9H8O4"),
+        evaluator.LogP(),
+        evaluator.NPerturbations(),
+        evaluator.QED(),
+        evaluator.RDFilters(),
+        evaluator.Rediscovery("C1=CC=CC=C1"),
+        evaluator.SAScore(),
+        evaluator.SillyWalks(radius=2),
     ]
 
     # il n'y a pas de fichier json sur https://github.com/PatWalters/silly_walks

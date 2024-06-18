@@ -8,7 +8,7 @@ The following page can be useful :
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import ClassVar, TypeVar, Any
+from typing import ClassVar, TypeVar
 
 from rdkit import Chem
 
@@ -99,15 +99,23 @@ class Action(ABC):
 class ActionError(Exception):
     """Error raised when an action is not applicable to a molecule."""
 
-    def __init__(self, action: Action, molecule: Molecule):
-        self.action: Action = action
-        self.molecule: Molecule = molecule
+    def __init__(self, action: Action, new_smiles: str, message: str) -> None:
+        """Initialize the mutation error.
+
+        Args:
+            action (type[Action]): Action that caused the error
+            new_smiles (str): SMILES after the mutation
+            message (str): message of the error
+        """
+        self.message: str = (
+            f"Action {action} caused an error. "
+            f"New SMILES: {new_smiles}. "
+            f"Message: {message}"
+        )
+        super().__init__(self.message)
 
     def __str__(self) -> str:
-        return f"Action {self.action} not applicable to molecule {self.molecule}"
-
-
-# TypeAction = TypeVar("TypeAction", bound=Action)
+        return self.message
 
 
 class MoleculeRepresentation(ABC):
@@ -244,11 +252,11 @@ class Molecule:
                 return representation
         raise ValueError(f"No representation found for {representation_class}")
 
-    def value(self, name: str) -> dict[str, Any]:
+    def value(self, name: str) -> object:
         """Return the value of the molecule."""
         return self._values.get(name, None)
 
-    def set_value(self, name: str, value: dict[str, Any]) -> None:
+    def set_value(self, name: str, value: object) -> None:
         """Set the value of the molecule."""
         self._values[name] = value
 

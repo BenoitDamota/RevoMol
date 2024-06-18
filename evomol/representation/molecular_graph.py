@@ -4,13 +4,20 @@ Molecular graph representation of a molecule with RDKit.
 
 from __future__ import annotations
 
+import io
+import os
+
 import networkx as nx
+from PIL import Image
 from rdkit import Chem
+from rdkit.Chem import Draw
+from rdkit.Chem.rdDepictor import Compute2DCoords
 from typing_extensions import override
 
 from evomol.representation.molecule import MoleculeRepresentation
 
 
+# pylint: disable=too-many-public-methods
 class MolecularGraph(MoleculeRepresentation):
     """
     Molecule representation using a molecular graph with RDKit.
@@ -286,11 +293,6 @@ class MolecularGraph(MoleculeRepresentation):
         """
         Drawing the molecule
         """
-        import io
-        import os
-        from rdkit.Chem.rdDepictor import Compute2DCoords
-        from PIL import Image
-        from rdkit.Chem import Draw
 
         mol = self.mol.GetMol()
         atoms = mol.GetNumAtoms()
@@ -447,3 +449,12 @@ class MolecularGraph(MoleculeRepresentation):
             atom.UpdatePropertyCache()
         # update RDKit representation
         self.mol.UpdatePropertyCache()
+
+    def change_smiles(self, smiles: str) -> None:
+        """Change the SMILES representation of the molecular graph.
+
+        Args:
+            smiles (str):
+                new SMILES representation of the molecular graph.
+        """
+        self.mol = Chem.RWMol(Chem.MolFromSmiles(smiles))

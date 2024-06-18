@@ -4,9 +4,8 @@ Tests for the molecular graph actions.
 
 import pytest
 
-from evomol.representation.molecular_graph import MolecularGraph
-
 from evomol.action import molecular_graph as mg
+from evomol.representation.molecular_graph import MolecularGraph
 from evomol.representation.molecule import Action, Molecule
 from evomol.representation.smiles import SMILES
 
