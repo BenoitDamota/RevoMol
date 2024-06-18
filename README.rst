@@ -27,16 +27,12 @@ Reimplementation of EvoMol from Jules Leguy : https://github.com/jules-leguy/Evo
 * Free software: MIT license
 * Documentation: https://evomol.readthedocs.io.
 
+make docs : to generate the documentation
+cd docs
+make doctest
+make html
 
 Features
 --------
 
 * TODO
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage

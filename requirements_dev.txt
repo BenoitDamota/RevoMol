@@ -21,3 +21,4 @@ pandas-stubs
 types-openpyxl
 matplotlib
 pytest
+furo
