@@ -1,12 +1,16 @@
-from typing import Any
+"""
+Silly Walks evaluation function.
+"""
+
 import json
+from typing import Any
 
-from typing_extensions import override
 from rdkit import Chem
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class SillyWalks(Evaluation):
@@ -39,9 +43,17 @@ class SillyWalks(Evaluation):
 
     """
 
-    def __init__(self, use_zinc: bool = True, radius: int = 2):
+    def __init__(
+        self,
+        path_db: str = "external_data/evo_filters_data/complete_ChEMBL_ecfp4_dict.json",
+        radius: int = 2,
+    ):
         """
         Init SillyWalks with the path to the reference database and the radius.
+
+        "external_data/evo_filters_data/complete_ChEMBL_ZINC_union_ecfp4_dict.
+        json"
+        if ZINC and CHEMBL
 
         Args:
             path_db (str): file that contains the reference dictionary of ECFC4
@@ -54,14 +66,9 @@ class SillyWalks(Evaluation):
 
         self.radius = radius
 
-        if use_zinc:
-            path_db = "external_data/evo_filters_data/complete_ChEMBL_ecfp4_dict.json"
-        else:
-            path_db = "external_data/evo_filters_data/complete_ChEMBL_ZINC_union_ecfp4_dict.json"
-
         # Reading the reference database
-        with open(path_db, "r", encoding="utf8") as f:
-            self.count_dict: dict = json.load(f)
+        with open(path_db, encoding="utf8") as f:
+            self.count_dict: dict[str, list[str]] = json.load(f)
 
     @override
     def _evaluate(self, molecule: Molecule) -> dict[str, Any]:

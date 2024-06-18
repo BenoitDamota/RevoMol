@@ -1,15 +1,19 @@
+"""
+This module contains the RDFilters class, which is used to evaluate molecules
+based on the RDKit filters.
+"""
+
+import json
 import os
 from typing import Any
-import json
 
-from typing_extensions import override
-from rdkit import Chem
 import pandas as pd
+from rdkit import Chem
+from typing_extensions import override
 
-
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class RDFilters(Evaluation):
@@ -39,7 +43,7 @@ class RDFilters(Evaluation):
     SOFTWARE.
     """
 
-    def __init__(self, path="external_data"):
+    def __init__(self, path: str = "external_data") -> None:
         super().__init__("RDFilters")
 
         rules_file_name: str = os.path.join(path, "rules.json")
@@ -54,7 +58,7 @@ class RDFilters(Evaluation):
 
         rules_list = [
             x.replace("Rule_", "")
-            for x in self.rule_dict.keys()
+            for x in self.rule_dict
             if x.startswith("Rule") and self.rule_dict[x]
         ]
 

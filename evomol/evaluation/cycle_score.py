@@ -1,16 +1,23 @@
+"""
+Cycle score evaluation.
+"""
+
 from typing import Any
 
-from typing_extensions import override
 import networkx as nx
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class CycleScore(Evaluation):
+    """
+    Evaluation of molecule with cycle score.
+    """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Cycle_score")
 
     @override

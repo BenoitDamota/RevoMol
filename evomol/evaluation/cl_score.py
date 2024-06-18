@@ -1,3 +1,8 @@
+"""
+This module contains the implementation of the CLScore class,
+which is used to evaluate the CL score of a molecule.
+"""
+
 import os
 import pickle
 from typing import Any
@@ -5,9 +10,9 @@ from typing import Any
 from rdkit import Chem
 from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class CLScore(Evaluation):
@@ -15,19 +20,19 @@ class CLScore(Evaluation):
 
     def __init__(
         self,
-        path=os.path.join(
+        path: str = os.path.join(
             "external_data",
             "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl",
         ),
-        radius=3,
-    ):
+        radius: int = 3,
+    ) -> None:
         super().__init__("CL_score")
 
         self.radius = radius
         self.rooted = True
         self.weighted = True
         self.cut_off = 0.0
-        self.db_shingles: dict = {}
+        self.db_shingles: dict[str, float] = {}
 
         # Loading ChEMBL shingles database
         # file: str = ""
@@ -40,8 +45,16 @@ class CLScore(Evaluation):
         with open(path, "rb") as pyc:
             self.db_shingles = pickle.load(pyc)
 
-    def extract_shingles(self, mol_graph: MolecularGraph):
-        shingles = set()
+    def extract_shingles(self, mol_graph: MolecularGraph) -> set[str]:
+        """Extract shingles from a molecular graph.
+
+        Args:
+            mol_graph (MolecularGraph): The molecular graph.
+
+        Returns:
+            set[str]: The set of shingles.
+        """
+        shingles: set[str] = set()
 
         # Reloading molecule to make it aromatic
         mol: Chem.rdchem.RWMol = Chem.MolFromSmiles(mol_graph.canonical_smiles)
@@ -86,16 +99,16 @@ class CLScore(Evaluation):
                 "CL_score": 0,
             }
 
-        scores = 0
+        scores: float
         if self.weighted:
             # using log10 of shingle frequency
             # if key not present, add 0 per default
-            scores = sum(self.db_shingles.get(shingle, 0) for shingle in shingles)
+            scores = sum(self.db_shingles.get(shingle, 0.0) for shingle in shingles)
         else:
             # working binary (i.e. if present -> count++ )
             scores = sum(1 for shingle in shingles if shingle in self.db_shingles)
 
-        cl_score = scores / len(shingles)
+        cl_score: float = scores / len(shingles)
 
         if not (self.cut_off == 0.0 or self.cut_off <= cl_score):
             cl_score = 0

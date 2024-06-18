@@ -1,11 +1,15 @@
+"""
+Isomer score based on the implementation of GuacaMol.
+"""
+
 from typing import Any
 
-from typing_extensions import override
 from guacamol.common_scoring_functions import IsomerScoringFunction
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class Isomer(Evaluation):

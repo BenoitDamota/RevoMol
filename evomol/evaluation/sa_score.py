@@ -1,16 +1,23 @@
+"""
+Evaluation of molecule with SA score using RDKit implementation.
+"""
+
 from typing import Any
 
-from typing_extensions import override
 from rdkit.Contrib.SA_Score import sascorer
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class SAScore(Evaluation):
+    """
+    Evaluation of molecule with SA score using RDKit implementation.
+    """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("SA_score")
 
     @override

@@ -1,8 +1,13 @@
+"""
+This module contains the evaluation strategy that computes the number of
+perturbations that were already applied to the molecule.
+"""
+
 from typing import Any
 
 from typing_extensions import override
 
-from evomol.evaluation import Evaluation
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecule import Molecule
 
 
@@ -15,7 +20,7 @@ class NPerturbations(Evaluation):
     number of previous mutations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("NPerturbations")
 
     @override

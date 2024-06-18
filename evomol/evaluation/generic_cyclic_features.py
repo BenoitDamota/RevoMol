@@ -1,25 +1,26 @@
-from typing import Any
-import json
+"""
+This module contains the implementation of the GenericCyclicFeatures evaluation.
+"""
 
-from typing_extensions import override
+from typing import Any
+
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
-import rdkit.Chem as Chem
-
-
-def compute_generic_scaffold_with_insat(smiles: str):
+def compute_generic_scaffold_with_insat(smiles: str) -> str:
     """
     Compute a generic cyclic feature (with insaturations) of a cyclic subgraph.
 
-    For that, it computes the Murcko scaffold on a subgraph (that includes a cycle), then all atoms
-    with a coordination number of 4 or less are converted to carbon atoms. Since hypervalent carbon
-    produce RDkit errors, hypervalent atoms are left unchanged.
+    For that, it computes the Murcko scaffold on a subgraph (that includes a
+    cycle), then all atoms with a coordination number of 4 or less are converted
+    to carbon atoms. Since hypervalent carbon produce RDkit errors, hypervalent
+    atoms are left unchanged.
     """
     smiles_scaf: str = MurckoScaffold.MurckoScaffoldSmiles(
         mol=Chem.MolFromSmiles(smiles), includeChirality=False
@@ -39,13 +40,14 @@ def compute_generic_scaffold_with_insat(smiles: str):
     return mol_scaf.smiles
 
 
-def compute_generic_cyclic_features_with_insat(smiles: str):
+def compute_generic_cyclic_features_with_insat(smiles: str) -> list[str]:
     """
     Compute all generic cyclic features (with insaturations) of a molecules.
 
-    For that, it breaks all the vertices (bonds) that do not belong to a cycle are deleted (called
-    bridge in graph vocabulary). Then, compute_generic_scaffold_with_insat is called on all
-    remaining cyclic subgraphs.
+    For that, it breaks all the vertices (bonds) that do not belong to a cycle
+    are deleted (called bridge in graph vocabulary).
+    Then, compute_generic_scaffold_with_insat is called on all remaining cyclic
+    subgraphs.
 
     """
     mol_graph = MolecularGraph(smiles)
@@ -55,11 +57,13 @@ def compute_generic_cyclic_features_with_insat(smiles: str):
 
     mol_graph.update_representation()
 
-    smiles_subgraphs = Chem.MolToSmiles(mol_graph.mol).split(".")
+    smiles_subgraphs: str = Chem.MolToSmiles(mol_graph.mol).split(".")
 
     # computes smiles of rings features and remove unique atoms
-    features = [s for s in smiles_subgraphs if len(s) > 4]
-    smiles_features = [compute_generic_scaffold_with_insat(f) for f in features]
+    features: list[str] = [s for s in smiles_subgraphs if len(s) > 4]
+    smiles_features: list[str] = [
+        compute_generic_scaffold_with_insat(f) for f in features
+    ]
 
     return smiles_features
 
@@ -67,15 +71,13 @@ def compute_generic_cyclic_features_with_insat(smiles: str):
 class GenericCyclicFeatures(Evaluation):
     """https://github.com/BenoitDamota/gcf"""
 
-    def __init__(self, use_zinc: bool = True):
+    def __init__(self, path_db: str = "external_data/gcf2.txt"):
+        """
+        "external_data/gcf1.txt" if CHEMBL and not ZINC
+        """
         super().__init__("GenericCyclicFeatures")
 
-        if use_zinc:
-            path_db = "external_data/gcf2.txt"
-        else:
-            path_db = "external_data/gcf1.txt"
-
-        with open(path_db, "r", encoding="utf8") as f:
+        with open(path_db, encoding="utf8") as f:
             self.smiles_list: frozenset[str] = frozenset(
                 line.strip() for line in f.readlines()
             )

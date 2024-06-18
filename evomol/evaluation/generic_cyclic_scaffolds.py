@@ -1,23 +1,36 @@
+"""
+Evaluation of the number of unknown generic cyclic scaffolds in a molecule
+compared to a reference dataset of generic cyclic scaffolds.
+"""
+
 from typing import Any
-import json
 
-from typing_extensions import override
 from rdkit import Chem
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 def compute_generic_scaffold(smiles: str) -> str:
+    """Computes the generic scaffold of a molecule.
+
+    Args:
+        smiles (str): SMILES representation of the molecule
+
+    Returns:
+        str: SMILES representation of the generic scaffold
+    """
     # compute generic scaffold
     mol = Chem.MolFromSmiles(smiles)
+    smiles_scaffolds: str = ""
     try:
         gscaf = Chem.Scaffolds.MurckoScaffold.MakeScaffoldGeneric(
             Chem.Scaffolds.MurckoScaffold.GetScaffoldForMol(mol)
         )
         smiles_scaffolds = Chem.MolToSmiles(gscaf)
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         smiles_scaffolds = Chem.Scaffolds.MurckoScaffold.MurckoScaffoldSmiles(
             mol=Chem.MolFromSmiles(smiles), includeChirality=False
         )
@@ -29,7 +42,8 @@ def compute_generic_scaffold(smiles: str) -> str:
         for atom1, atom2 in mol_scaffolds.bonds:
             mol_scaffolds.set_bond(atom1, atom2, 1)
 
-        for atom in mol_scaffolds.mol_graph.GetAtoms():
+        atom: Chem.Atom
+        for atom in mol_scaffolds.mol.GetAtoms():
             if atom.GetTotalValence() <= 4:
                 # Changing atomic number
                 atom.SetAtomicNum(6)
@@ -59,7 +73,7 @@ def extract_generic_scaffolds(smiles: str) -> set[str]:
             Chem.Scaffolds.MurckoScaffold.GetScaffoldForMol(mol)
         )
         smiles = Chem.MolToSmiles(gscaf)
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         pass
 
     mol_graph = MolecularGraph(smiles)
@@ -88,15 +102,13 @@ class GenericCyclicScaffolds(Evaluation):
     * Each bond becomes a single bond
     """
 
-    def __init__(self, use_zinc: bool = True):
+    def __init__(self, path_db: str = "external_data/gcf2.txt"):
+        """
+        "external_data/gcf1.txt" if CHEMBL and not ZINC
+        """
         super().__init__("GenericCyclicScaffolds")
 
-        if use_zinc:
-            path_db = "external_data/gcf2.txt"
-        else:
-            path_db = "external_data/gcf1.txt"
-
-        with open(path_db, "r", encoding="utf8") as f:
+        with open(path_db, encoding="utf8") as f:
             self.smiles_list: frozenset[str] = frozenset(
                 line.strip() for line in f.readlines()
             )

@@ -1,23 +1,28 @@
+"""
+Evaluation of population with QED score using RDKit implementation.
+"""
+
 from typing import Any
 
-from typing_extensions import override
 from rdkit import Chem
+from typing_extensions import override
 
-from evomol.evaluation import Evaluation
-from evomol.representation.molecule import Molecule
+from evomol.evaluation.evaluation import Evaluation
 from evomol.representation.molecular_graph import MolecularGraph
+from evomol.representation.molecule import Molecule
 
 
 class QED(Evaluation):
     """
     Evaluation of population with QED score using RDKit implementation.
-    Bickerton, G. Richard, Gaia V. Paolini, Jérémy Besnard, Sorel Muresan, et Andrew L. Hopkins.
+    Bickerton, G. Richard, Gaia V. Paolini, Jérémy Besnard, Sorel Muresan, and
+    Andrew L. Hopkins.
     Quantifying the Chemical Beauty of Drugs
     Nature Chemistry 4, nᵒ 2 (février 2012): 90-98
     https://doi.org/10.1038/nchem.1243
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("QED")
 
     @override
