@@ -1,46 +1,83 @@
 """
-Evaluation of molecule with SA score using RDKit implementation.
+SAscore evaluation of a molecule using RDKit implementation.
+
+
+Ertl, Peter, et Ansgar Schuffenhauer.
+Estimation of synthetic accessibility score of drug-like
+molecules based on molecular complexity and fragment contributions
+Journal of Cheminformatics 1, no 1 (10 juin 2009): 8.
+https://doi.org/10.1186/1758-2946-1-8.
 """
 
-from typing import Any
-
 from rdkit.Contrib.SA_Score import sascorer
-from typing_extensions import override
 
-from evomol.evaluation.evaluation import Evaluation
+from evomol.evaluation.evaluation import Function
 from evomol.representation import MolecularGraph, Molecule
 
 
-class SAScore(Evaluation):
+def sa_score(molecule: Molecule) -> float:
+    """Calculate the synthetic accessibility score of a molecule.
+
+    Args:
+        molecule (Molecule): Molecule to evaluate
+
+    Returns:
+        float: Synthetic accessibility score
     """
-    Evaluation of molecule with SA score using RDKit implementation.
+    mol_graph = molecule.get_representation(MolecularGraph)
+
+    # SAscore is a positive score between 1 and 10
+    # 10 being the most complex molecule
+    sa_score_value: float = sascorer.calculateScore(mol_graph.mol)
+
+    return sa_score_value
+
+
+def normalized_sa_score(molecule: Molecule) -> float:
+    """Normalize the synthetic accessibility score of a molecule.
+
+    Args:
+        molecule (Molecule): Molecule to evaluate
+
+    Returns:
+        float: Normalized synthetic accessibility score
     """
+    sa_score_value: float = molecule.value("SAscore")
 
-    def __init__(self) -> None:
-        super().__init__("SA_score")
+    # normalization with 0 being the most complex molecule
+    normalized_sa_score_value: float = 1 - (sa_score_value - 1) / 9
 
-    @override
-    def _evaluate(self, molecule: Molecule) -> dict[str, Any]:
-        mol_graph = molecule.get_representation(MolecularGraph)
+    return normalized_sa_score_value
 
-        sa_score = -sascorer.calculateScore(mol_graph.mol)
 
-        # normalization constants
-        # statistics from 250k_rndm_zinc_drugs_clean.smi
-        sa_mean = -3.0525811293166134
-        sa_std = 0.8335207024513095
+def zinc_normalized_sa_score(molecule: Molecule) -> float:
+    """Normalize the synthetic accessibility score of a molecule using the
+    statistics from 250k_rndm_zinc_drugs_clean.smi.
 
-        normalized_sa_score = (sa_score - sa_mean) / sa_std
+    Args:
+        molecule (Molecule): Molecule to evaluate
 
-        # Ertl, Peter, et Ansgar Schuffenhauer.
-        # Estimation of synthetic accessibility score of drug-like
-        # molecules based on molecular complexity and fragment contributions
-        # Journal of Cheminformatics 1, no 1 (10 juin 2009): 8.
-        # https://doi.org/10.1186/1758-2946-1-8.
-        other_sa_score = 1 - (sa_score - 1) / 9
+    Returns:
+        float: Normalized synthetic accessibility score using ZINC statistics
+    """
+    sa_score_value: float = molecule.value("SAscore")
 
-        return {
-            "SA_score": sa_score,
-            "normalized_SA_score": normalized_sa_score,
-            "other_SA_score": other_sa_score,
-        }
+    # normalization constants
+    # statistics from 250k_rndm_zinc_drugs_clean.smi
+    sa_mean: float = -3.0525811293166134
+    sa_std: float = 0.8335207024513095
+    zinc_normalized_sa_score_value: float = (-sa_score_value - sa_mean) / sa_std
+
+    return zinc_normalized_sa_score_value
+
+
+SAScore = Function("SAScore", sa_score)
+
+
+NormalizedSAScore = Function("NormalizedSAScore", normalized_sa_score)
+
+
+ZincNormalizedSAScore = Function(
+    "ZincNormalizedSAScore",
+    zinc_normalized_sa_score,
+)

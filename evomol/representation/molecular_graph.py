@@ -46,7 +46,7 @@ class MolecularGraph(MoleculeRepresentation):
     def __eq__(self, value: object) -> bool:
         return (
             isinstance(value, MolecularGraph)
-            and self.canonical_smiles == value.canonical_smiles
+            and self.aromatic_canonical_smiles == value.aromatic_canonical_smiles
         )
 
     @override
@@ -63,18 +63,25 @@ class MolecularGraph(MoleculeRepresentation):
         return nb_atoms
 
     @property
-    def smiles(self) -> str:
-        """Return the SMILES representation of the molecule."""
-        smiles: str = Chem.MolToSmiles(self.mol, canonical=False)
+    def canonical_smiles(self) -> str:
+        """
+        Return the canonical and non-aromatic SMILES representation of the molecule.
+        """
+        smiles: str = Chem.MolToSmiles(
+            self.mol,
+            kekuleSmiles=True,
+            canonical=True,
+        )
         return smiles
 
     @property
-    def canonical_smiles(self) -> str:
-        """Return the canonical SMILES representation of the molecule."""
+    def aromatic_canonical_smiles(self) -> str:
+        """Return the aromatic canonical SMILES representation of the molecule."""
         canonic_smiles: str = Chem.MolToSmiles(
             Chem.MolFromSmiles(
                 Chem.MolToSmiles(MolecularGraph(Chem.MolToSmiles(self.mol)).mol)
-            )
+            ),
+            canonical=True,
         )
         return canonic_smiles
 
@@ -341,7 +348,7 @@ class MolecularGraph(MoleculeRepresentation):
         d.drawOptions().addAtomIndices = True
         d.DrawMolecule(mol)
         d.FinishDrawing()
-        d.WriteDrawingText(f"{self.smiles}.png")
+        d.WriteDrawingText(f"{self.canonical_smiles}.png")
 
         # return image
 

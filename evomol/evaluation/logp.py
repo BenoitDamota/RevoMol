@@ -2,37 +2,49 @@
 This module contains the evaluation class for the logP property.
 """
 
-from typing import Any
-
 from rdkit.Chem import Descriptors
-from typing_extensions import override
 
-from evomol.evaluation.evaluation import Evaluation
+from evomol.evaluation.evaluation import Function
 from evomol.representation import MolecularGraph, Molecule
 
 
-class LogP(Evaluation):
+def log_p(molecule: Molecule) -> float:
+    """Calculate the logP of a molecule.
+
+    Args:
+        molecule (Molecule): Molecule to evaluate
+
+    Returns:
+        float: logP value
     """
-    Evaluation class for the logP property.
+    mol_graph = molecule.get_representation(MolecularGraph)
+
+    log_p_value: float = Descriptors.MolLogP(mol_graph.mol)
+
+    return log_p_value
+
+
+def zinc_normalized_log_p(molecule: Molecule) -> float:
+    """Normalize the logP of a molecule using the statistics from
+    250k_rndm_zinc_drugs_clean.smi.
+
+    Args:
+        molecule (Molecule): Molecule to evaluate
+
+    Returns:
+        float: Normalized logP using ZINC statistics
     """
+    log_p_value: float = molecule.value("logP")
 
-    def __init__(self) -> None:
-        super().__init__("logP")
+    # normalization constants
+    # statistics from 250k_rndm_zinc_drugs_clean.smi
+    log_p_mean: float = 2.4570953396190123
+    log_p_std: float = 1.434324401111988
 
-    @override
-    def _evaluate(self, molecule: Molecule) -> dict[str, Any]:
-        # normalization constants
-        # statistics from 250k_rndm_zinc_drugs_clean.smi
-        log_p_mean = 2.4570953396190123
-        log_p_std = 1.434324401111988
+    normalized_log_p: float = (log_p_value - log_p_mean) / log_p_std
 
-        mol_graph = molecule.get_representation(MolecularGraph)
+    return normalized_log_p
 
-        log_p = Descriptors.MolLogP(mol_graph.mol)
 
-        normalized_log_p = (log_p - log_p_mean) / log_p_std
-
-        return {
-            "logP": log_p,
-            "normalized_logP": normalized_log_p,
-        }
+LogP = Function("logP", log_p)
+ZincNormalizedLogP = Function("zinc_normalized_logP", zinc_normalized_log_p)

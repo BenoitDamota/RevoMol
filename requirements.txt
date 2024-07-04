@@ -6,3 +6,4 @@ guacamol
 cclib
 matplotlib
 pygraphviz
+typing_extensions

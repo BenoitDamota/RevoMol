@@ -1,11 +1,18 @@
 """
-This module contains the implementation of the CLScore class,
-which is used to evaluate the CL score of a molecule.
+CLScore evaluation of a molecule using subgraph reference data.
+
+Bühlmann, Sven, et Jean-Louis Reymond.
+ChEMBL-Likeness Score and Database GDBChEMBL
+Frontiers in Chemistry 8 (04/02/2020).
+https://doi.org/10.3389/fchem.2020.00046.)
+
+Based on https://github.com/reymond-group/GDBChEMBL
+Options about, rooted, weighted, radius or cutoff have been removed and set to
+default values.
 """
 
 import os
 import pickle
-from typing import Any
 
 from rdkit import Chem
 from typing_extensions import override
@@ -14,8 +21,54 @@ from evomol.evaluation.evaluation import Evaluation
 from evomol.representation import MolecularGraph, Molecule
 
 
+def extract_shingles(smiles: str) -> set[str]:
+    """Extract shingles from a molecular graph.
+
+    Args:
+        smiles (str): canonical SMILES representation of the molecule.
+
+    Returns:
+        set[str]: The set of shingles.
+    """
+    shingles: set[str] = set()
+
+    # Reloading molecule to make it aromatic
+    mol: Chem.rdchem.RWMol = Chem.MolFromSmiles(smiles)
+
+    radius = 3
+    for atom in range(mol.GetNumAtoms()):
+        for rad in range(1, radius + 1):
+            bonds = Chem.FindAtomEnvironmentOfRadiusN(mol, rad, atom)
+
+            if not bonds:
+                break
+
+            atoms = set()
+            for bond_idx in bonds:
+                bond = mol.GetBondWithIdx(bond_idx)
+                atoms.add(bond.GetBeginAtomIdx())
+                atoms.add(bond.GetEndAtomIdx())
+
+            shingles.add(
+                Chem.rdmolfiles.MolFragmentToSmiles(
+                    mol,
+                    list(atoms),
+                    bonds,
+                    0,
+                    0,
+                    False,
+                    False,
+                    atom,
+                    True,
+                    False,
+                    False,
+                )
+            )
+    return shingles
+
+
 class CLScore(Evaluation):
-    """Code from https://github.com/reymond-group/GDBChEMBL"""
+    """CLScore evaluation of a molecule using subgraph reference data."""
 
     def __init__(
         self,
@@ -23,95 +76,28 @@ class CLScore(Evaluation):
             "external_data",
             "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl",
         ),
-        radius: int = 3,
     ) -> None:
-        super().__init__("CL_score")
+        super().__init__("CLscore")
 
-        self.radius = radius
-        self.rooted = True
-        self.weighted = True
-        self.cut_off = 0.0
         self.db_shingles: dict[str, float] = {}
 
-        # Loading ChEMBL shingles database
-        # file: str = ""
-
-        # if self.rooted:
-        #     file = "chembl_24_1_shingle_scores_log10_rooted_nchir_min_freq_100.pkl"
-        # else:
-        #     file = "chembl_24_1_shingle_scores_log10_nrooted_nchir.pkl"
-        # path = os.path.join(os.environ["SHINGLE_LIBS"], file)
         with open(path, "rb") as pyc:
             self.db_shingles = pickle.load(pyc)
 
-    def extract_shingles(self, mol_graph: MolecularGraph) -> set[str]:
-        """Extract shingles from a molecular graph.
-
-        Args:
-            mol_graph (MolecularGraph): The molecular graph.
-
-        Returns:
-            set[str]: The set of shingles.
-        """
-        shingles: set[str] = set()
-
-        # Reloading molecule to make it aromatic
-        mol: Chem.rdchem.RWMol = Chem.MolFromSmiles(mol_graph.canonical_smiles)
-
-        for atom in range(mol.GetNumAtoms()):
-            for radius in range(1, self.radius + 1):
-                bonds = Chem.FindAtomEnvironmentOfRadiusN(mol, radius, atom)
-
-                if not bonds:
-                    break
-
-                atoms = set()
-                for bond_idx in bonds:
-                    bond = mol.GetBondWithIdx(bond_idx)
-                    atoms.add(bond.GetBeginAtomIdx())
-                    atoms.add(bond.GetEndAtomIdx())
-
-                shingles.add(
-                    Chem.rdmolfiles.MolFragmentToSmiles(
-                        mol,
-                        list(atoms),
-                        bonds,
-                        0,
-                        0,
-                        False,
-                        False,
-                        atom if self.rooted else -1,
-                        True,
-                        False,
-                        False,
-                    )
-                )
-        return shingles
-
     @override
-    def _evaluate(self, molecule: Molecule) -> dict[str, Any]:
+    def _evaluate(self, molecule: Molecule) -> float:
 
-        shingles = self.extract_shingles(molecule.get_representation(MolecularGraph))
+        shingles = extract_shingles(
+            molecule.get_representation(MolecularGraph).aromatic_canonical_smiles
+        )
 
         if not shingles:
-            return {
-                "CL_score": 0,
-            }
+            return 0.0
 
-        scores: float
-        if self.weighted:
-            # using log10 of shingle frequency
-            # if key not present, add 0 per default
-            scores = sum(self.db_shingles.get(shingle, 0.0) for shingle in shingles)
-        else:
-            # working binary (i.e. if present -> count++ )
-            scores = sum(1 for shingle in shingles if shingle in self.db_shingles)
+        # using log10 of shingle frequency
+        # if key not present, add 0 per default
+        scores: float = sum(self.db_shingles.get(shingle, 0.0) for shingle in shingles)
 
         cl_score: float = scores / len(shingles)
 
-        if not (self.cut_off == 0.0 or self.cut_off <= cl_score):
-            cl_score = 0
-
-        return {
-            "CL_score": cl_score,
-        }
+        return cl_score

@@ -2,9 +2,26 @@
 This module contains the abstract class Evaluation.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any, Callable
+
+from typing_extensions import override
 
 from evomol.representation import Molecule
+
+
+class EvaluationError(Exception):
+    """Evaluation error."""
+
+    def __init__(self, message: str) -> None:
+        """Initialize the error.
+
+        Args:
+            message (str): The error message.
+        """
+        super().__init__(message)
 
 
 class Evaluation(ABC):
@@ -29,7 +46,7 @@ class Evaluation(ABC):
         """
         return self._name
 
-    def evaluate(self, molecule: Molecule) -> object:
+    def evaluate(self, molecule: Molecule) -> Any:
         """Evaluate the property of the molecule. If the value is already
         computed, return it. Otherwise, compute it and store it in the molecule.
 
@@ -39,15 +56,17 @@ class Evaluation(ABC):
         Returns:
             object: The value of the evaluation.
         """
-        value: object = molecule.value(self.name)
+        value: Any = molecule.value(self.name)
         if value is not None:
             return value
+
         value = self._evaluate(molecule)
+
         molecule.set_value(self.name, value)
         return value
 
     @abstractmethod
-    def _evaluate(self, molecule: Molecule) -> object:
+    def _evaluate(self, molecule: Molecule) -> Any:
         """Evaluate the property of the molecule.
 
         Args:
@@ -56,3 +75,15 @@ class Evaluation(ABC):
         Returns:
             object: The value of the evaluation.
         """
+
+
+class Function(Evaluation):
+    """Class to define an evaluation based on a function."""
+
+    def __init__(self, name: str, function: Callable[[Molecule], Any]) -> None:
+        super().__init__(name)
+        self.function = function
+
+    @override
+    def _evaluate(self, molecule: Molecule) -> Any:
+        return self.function(molecule)

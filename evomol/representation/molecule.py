@@ -8,7 +8,7 @@ The following page can be useful :
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import ClassVar, TypeVar
+from typing import Any, ClassVar, TypeVar
 
 import evomol.action.action as action_module  # pylint: disable=cyclic-import
 
@@ -104,6 +104,7 @@ class Molecule:
             for representation_class in Molecule.representations_class
         ]
         self._values: dict[str, object] = {}
+        self.possible_actions: dict[str, dict[str, list[action_module.Action]]] = {}
 
     def list_available_actions_space(
         self,
@@ -119,8 +120,15 @@ class Molecule:
         self,
     ) -> dict[str, dict[str, list[action_module.Action]]]:
         """List all possible actions for the molecule."""
-        # make sure that the possible action is not empty
-        possible_actions = {}
+        # if the possible actions have already been computed
+        if self.possible_actions != {} and self.possible_actions is not None:
+            return self.possible_actions
+
+        # if all the possible actions have been applied (all removed from the list)
+        if self.possible_actions is None:
+            return None
+
+        # compute the possible actions
         for representation in self.representations:
             current_actions = {}
             for action in representation.action_space:
@@ -128,8 +136,8 @@ class Molecule:
                 if list_actions:
                     current_actions[action.class_name()] = list_actions
             if current_actions:
-                possible_actions[representation.class_name()] = current_actions
-        return possible_actions
+                self.possible_actions[representation.class_name()] = current_actions
+        return self.possible_actions
 
         # return {
         #     representation: {
@@ -138,6 +146,39 @@ class Molecule:
         #     }
         #     for representation in self.representations
         # }
+
+    def nb_possible_actions(self) -> int:
+        """Return the number of possible actions for the molecule."""
+        if self.possible_actions is None:
+            return 0
+        if not self.possible_actions:
+            self.list_all_possible_actions()
+
+        count = 0
+        for representation in self.possible_actions.values():
+            for actions in representation.values():
+                count += len(actions)
+        return count
+
+    def remove_action(self, action: action_module.Action) -> None:
+        """Remove the action from the possible actions."""
+        repr_name = ""
+        for representation_name, actions_dict in self.possible_actions.items():
+            if repr_name:
+                break
+            for action_name in actions_dict:
+                if action.class_name() == action_name:
+                    repr_name = representation_name
+                    break
+        if not repr_name:
+            raise ValueError(f"Action {action} not found")
+        self.possible_actions[repr_name][action.class_name()].remove(action)
+        if not self.possible_actions[repr_name][action.class_name()]:
+            self.possible_actions[repr_name].pop(action.class_name())
+        if not self.possible_actions[repr_name]:
+            self.possible_actions.pop(repr_name)
+        if not self.possible_actions:
+            self.possible_actions = None
 
     def get_representation(
         self, representation_class: type[TypeMoleculeRepresentation]
@@ -148,7 +189,7 @@ class Molecule:
                 return representation
         raise ValueError(f"No representation found for {representation_class}")
 
-    def value(self, name: str) -> object:
+    def value(self, name: str) -> Any:
         """Return the value of the molecule."""
         return self._values.get(name, None)
 
@@ -173,3 +214,7 @@ class Molecule:
             and self.id_representation == value.id_representation
             and self.representations == value.representations
         )
+
+    def __hash__(self) -> int:
+        # TODO to correct, MolecularGraph may not always be the first representation
+        return hash(self.representations[0].canonical_smiles)

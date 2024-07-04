@@ -8,7 +8,6 @@ black
 mypy
 pylint
 numpy
-rdkit
 ipykernel
 networkx
 guacamol
@@ -22,3 +21,7 @@ types-openpyxl
 matplotlib
 pytest
 furo
+typing_extensions
+PIL
+rdkit
+pillow

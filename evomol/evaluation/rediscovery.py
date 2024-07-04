@@ -1,8 +1,12 @@
 """
 Rediscovery score based on the implementation of GuacaMol.
-"""
 
-from typing import Any
+
+Nathan Brown et al.
+GuacaMol: Benchmarking Models for de Novo Molecular Design
+Journal of Chemical Information and Modeling 59, no. 3 (March 25, 2019): 1096–1108
+https://doi.org/10.1021/acs.jcim.8b00839
+"""
 
 from guacamol.common_scoring_functions import TanimotoScoringFunction
 from typing_extensions import override
@@ -14,13 +18,9 @@ from evomol.representation import MolecularGraph, Molecule
 class Rediscovery(Evaluation):
     """
     Rediscovery score based on the implementation of GuacaMol
-    Nathan Brown et al.
-    GuacaMol: Benchmarking Models for de Novo Molecular Design
-    Journal of Chemical Information and Modeling 59, no. 3 (March 25, 2019): 1096–1108
-    https://doi.org/10.1021/acs.jcim.8b00839
     """
 
-    def __init__(self, target_smiles: str):
+    def __init__(self, target_smiles: str) -> None:
         super().__init__("rediscovery_" + target_smiles)
         self.scorer = TanimotoScoringFunction(
             target_smiles,
@@ -28,9 +28,7 @@ class Rediscovery(Evaluation):
         )
 
     @override
-    def _evaluate(self, molecule: Molecule) -> dict[str, Any]:
+    def _evaluate(self, molecule: Molecule) -> float:
         mol_graph = molecule.get_representation(MolecularGraph)
 
-        return {
-            "rediscovery_score": self.scorer.score(mol_graph.canonical_smiles),
-        }
+        return self.scorer.score(mol_graph.aromatic_canonical_smiles)

@@ -1,46 +1,24 @@
 """
 This module contains the RDFilters class, which is used to evaluate molecules
 based on the RDKit filters.
+
+
+Adapted from https://github.com/PatWalters/rd_filters
 """
 
 import json
 import os
-from typing import Any
 
 import pandas as pd
 from rdkit import Chem
 from typing_extensions import override
 
-from evomol.evaluation.evaluation import Evaluation
+from evomol.evaluation.evaluation import Evaluation, EvaluationError
 from evomol.representation import MolecularGraph, Molecule
 
 
 class RDFilters(Evaluation):
-    """
-    Adapted from https://github.com/PatWalters/rd_filters
-
-    MIT License
-
-    Copyright (c) 2018 Patrick Walters
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-    """
+    """RDFilters evaluation class."""
 
     def __init__(self, path: str = "external_data") -> None:
         super().__init__("RDFilters")
@@ -74,16 +52,14 @@ class RDFilters(Evaluation):
                 self.rule_list.append([smarts_mol, max_val, desc])
 
     @override
-    def _evaluate(self, molecule: Molecule) -> dict[str, Any]:
+    def _evaluate(self, molecule: Molecule) -> bool:
 
         mol: Chem.rdchem.RWMol = Chem.MolFromSmiles(
-            molecule.get_representation(MolecularGraph).canonical_smiles
+            molecule.get_representation(MolecularGraph).aromatic_canonical_smiles
         )
 
         if mol is None:
-            return {
-                "filter": 0,
-            }
+            raise EvaluationError("RDFilters - The molecule is None.")
 
         desc_list = [
             Chem.Descriptors.MolWt(mol),
@@ -105,10 +81,12 @@ class RDFilters(Evaluation):
         ]
 
         if len(df_ok) == 0:
-            return {"filter": 0}
+            raise EvaluationError("RDFilters - The molecule is out of range.")
 
         for patt, max_val, _ in self.rule_list:
             if len(mol.GetSubstructMatches(patt)) > max_val:
-                return {"filter": 0}
+                raise EvaluationError(
+                    f"RDFilters - The molecule has {patt} substructure."
+                )
 
-        return {"filter": 1}
+        return True
