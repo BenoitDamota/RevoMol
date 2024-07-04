@@ -12,7 +12,7 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class RemoveGroupMolGraph(ActionMolGraph):
+class RemoveGroupMG(ActionMolGraph):
     """
     Remove a group of connected atoms from the molecular graph.
     """
@@ -121,7 +121,7 @@ class RemoveGroupMolGraph(ActionMolGraph):
 
             if can_remove_1:
                 action_list.append(
-                    RemoveGroupMolGraph(
+                    RemoveGroupMG(
                         molecule,
                         bridge_atom_to_keep=atom2,
                         bridge_atom_to_remove=atom1,
@@ -130,7 +130,7 @@ class RemoveGroupMolGraph(ActionMolGraph):
 
             if can_remove_2:
                 action_list.append(
-                    RemoveGroupMolGraph(
+                    RemoveGroupMG(
                         molecule,
                         bridge_atom_to_keep=atom1,
                         bridge_atom_to_remove=atom2,

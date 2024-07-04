@@ -10,7 +10,7 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class XXXMolGraph(ActionMolGraph):
+class XXXMG(ActionMolGraph):
     """
     XXX to the molecular graph.
     """

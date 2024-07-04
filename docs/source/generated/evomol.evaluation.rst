@@ -20,6 +20,14 @@ evomol.evaluation.cycle\_score module
    :undoc-members:
    :show-inheritance:
 
+evomol.evaluation.diversity module
+----------------------------------
+
+.. automodule:: evomol.evaluation.diversity
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 evomol.evaluation.evaluation module
 -----------------------------------
 
@@ -32,14 +40,6 @@ evomol.evaluation.generic\_cyclic\_features module
 --------------------------------------------------
 
 .. automodule:: evomol.evaluation.generic_cyclic_features
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-evomol.evaluation.generic\_cyclic\_scaffolds module
----------------------------------------------------
-
-.. automodule:: evomol.evaluation.generic_cyclic_scaffolds
    :members:
    :undoc-members:
    :show-inheritance:
@@ -100,10 +100,10 @@ evomol.evaluation.sa\_score module
    :undoc-members:
    :show-inheritance:
 
-evomol.evaluation.silly\_walks module
--------------------------------------
+evomol.evaluation.unknown\_ecfp module
+--------------------------------------
 
-.. automodule:: evomol.evaluation.silly_walks
+.. automodule:: evomol.evaluation.unknown_ecfp
    :members:
    :undoc-members:
    :show-inheritance:

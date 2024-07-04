@@ -1,5 +1,9 @@
 """
-Remove an atom from the molecular graph.
+The action RemoveAtom consist in removing an atom from the molecular graph.
+The atom to remove is selected among the atoms that don't represent a bridge
+bond (i.e. their removal would not create multiple connected components in the
+molecular graph), that are not charged nor radical, and that none of their
+neighbors are radical or charged.
 """
 
 import networkx as nx
@@ -11,19 +15,29 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class RemoveAtomMolGraph(ActionMolGraph):
+class RemoveAtomMG(ActionMolGraph):
     """
     Remove an atom from the molecular graph.
     """
 
     def __init__(self, molecule: Molecule, atom_idx: int) -> None:
+        """Initialize the action to remove an atom from the molecular graph.
+
+        Args:
+            molecule (Molecule): Molecule to modify.
+            atom_idx (int): Index of the atom to remove.
+        """
         super().__init__(molecule)
         # index of the atom to remove
         self.atom_idx: int = atom_idx
 
     @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
-        # Removing the atom
+        """Remove the atom from the molecular graph.
+
+        Args:
+            new_mol_graph (MolecularGraph): Molecular graph to modify.
+        """
         new_mol_graph.remove_atom(self.atom_idx)
 
     def __repr__(self) -> str:
@@ -32,7 +46,14 @@ class RemoveAtomMolGraph(ActionMolGraph):
     @override
     @classmethod
     def list_actions(cls, molecule: Molecule) -> list[Action]:
-        """List possible actions to remove an atom from the molecular graph."""
+        """List possible actions to remove an atom from the molecular graph.
+
+        Args:
+            molecule (Molecule): Molecule to modify.
+
+        Returns:
+            list[Action]: List of possible actions to remove an atom.
+        """
 
         mol_graph: MolecularGraph = molecule.get_representation(MolecularGraph)
 
@@ -54,7 +75,7 @@ class RemoveAtomMolGraph(ActionMolGraph):
         # an articulation point and
         # none of its neighbors are radical or charged
         return [
-            RemoveAtomMolGraph(molecule, atom)
+            RemoveAtomMG(molecule, atom)
             for atom in range(mol_graph.nb_atoms)
             if not articulation_points[atom]
             and not charged_or_radical[atom]

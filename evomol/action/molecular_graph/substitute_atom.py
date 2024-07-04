@@ -2,12 +2,11 @@
 Substitute an atom in the molecular graph.
 """
 
+from rdkit import Chem
 from typing_extensions import override
 
-from rdkit import Chem
-
 from evomol.action import Action
-from evomol.representation import MolecularGraph, Molecule, SULFUR_MAX_VALENCE
+from evomol.representation import SULFUR_MAX_VALENCE, MolecularGraph, Molecule
 
 from .action_molecular_graph import ActionMolGraph
 
@@ -32,7 +31,7 @@ def max_valence(atom: str) -> int:
     return valence
 
 
-class SubstituteAtomMolGraph(ActionMolGraph):
+class SubstituteAtomMG(ActionMolGraph):
     """
     Substitute an atom in the molecular graph.
     """
@@ -74,6 +73,6 @@ class SubstituteAtomMolGraph(ActionMolGraph):
                 if subst == atom_type:
                     continue
                 if max_valences[subst] >= explicit_valence:
-                    action_list.append(SubstituteAtomMolGraph(molecule, atom, subst))
+                    action_list.append(SubstituteAtomMG(molecule, atom, subst))
 
         return action_list

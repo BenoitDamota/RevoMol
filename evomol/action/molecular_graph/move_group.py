@@ -11,7 +11,7 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class MoveGroupMolGraph(ActionMolGraph):
+class MoveGroupMG(ActionMolGraph):
     """
     Move a group of atoms at a different position in the molecular graph.
     """
@@ -116,7 +116,7 @@ class MoveGroupMolGraph(ActionMolGraph):
                 for atom_to_link in component1:
                     if implicit_valences[atom_to_link] >= bond_type:
                         action_list.append(
-                            MoveGroupMolGraph(
+                            MoveGroupMG(
                                 molecule,
                                 atom_moving=atom2,
                                 atom_staying=atom1,
@@ -132,7 +132,7 @@ class MoveGroupMolGraph(ActionMolGraph):
                 for atom_to_link in component2:
                     if implicit_valences[atom_to_link] >= bond_type:
                         action_list.append(
-                            MoveGroupMolGraph(
+                            MoveGroupMG(
                                 molecule,
                                 atom_moving=atom1,
                                 atom_staying=atom2,

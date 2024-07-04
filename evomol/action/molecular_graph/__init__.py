@@ -4,29 +4,29 @@ This module contains the classes for the molecular graph actions.
 
 # flake8: noqa
 from .add_atom import (
-    AddAtomMolGraph as AddAtomMolGraph,
+    AddAtomMG as AddAtomMG,
 )
 from .add_group import (
-    AddGroupMolGraph as AddGroupMolGraph,
+    AddGroupMG as AddGroupMG,
 )
 from .change_bond import (
-    ChangeBondMolGraph as ChangeBondMolGraph,
+    ChangeBondMG as ChangeBondMG,
 )
 from .cut_atom import (
-    CutAtomMolGraph as CutAtomMolGraph,
+    CutAtomMG as CutAtomMG,
 )
 from .insert_carbon import (
-    InsertCarbonMolGraph as InsertCarbonMolGraph,
+    InsertCarbonMG as InsertCarbonMG,
 )
 from .move_group import (
-    MoveGroupMolGraph as MoveGroupMolGraph,
+    MoveGroupMG as MoveGroupMG,
 )
 from .remove_atom import (
-    RemoveAtomMolGraph as RemoveAtomMolGraph,
+    RemoveAtomMG as RemoveAtomMG,
 )
 from .remove_group import (
-    RemoveGroupMolGraph as RemoveGroupMolGraph,
+    RemoveGroupMG as RemoveGroupMG,
 )
 from .substitute_atom import (
-    SubstituteAtomMolGraph as SubstituteAtomMolGraph,
+    SubstituteAtomMG as SubstituteAtomMG,
 )

@@ -23,7 +23,7 @@ class Group:
     positions_to_link: list[int]
 
 
-class AddGroupMolGraph(ActionMolGraph):
+class AddGroupMG(ActionMolGraph):
     """
     Add a group of atoms to the molecular graph.
     """
@@ -81,7 +81,7 @@ class AddGroupMolGraph(ActionMolGraph):
         # if the molecule is empty, we can add any group
         if mol_graph.nb_atoms == 0:
             return [
-                AddGroupMolGraph(molecule, 0, group.smiles, position)
+                AddGroupMG(molecule, 0, group.smiles, position)
                 for group in cls.groups
                 for position in group.positions_to_link
             ]
@@ -93,7 +93,7 @@ class AddGroupMolGraph(ActionMolGraph):
         implicit_valences = mol_graph.implicit_valences
 
         return [
-            AddGroupMolGraph(molecule, atom_idx, group.smiles, position)
+            AddGroupMG(molecule, atom_idx, group.smiles, position)
             for atom_idx in range(mol_graph.nb_atoms)
             if implicit_valences[atom_idx] > 0
             and not mol_graph.atom_charged_or_radical(atom_idx)

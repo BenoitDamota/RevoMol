@@ -10,6 +10,7 @@ Subpackages
    evomol.action
    evomol.evaluation
    evomol.representation
+   evomol.search
 
 Submodules
 ----------
@@ -26,14 +27,6 @@ evomol.evomol module
 --------------------
 
 .. automodule:: evomol.evomol
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-evomol.neighborhood\_strategy module
-------------------------------------
-
-.. automodule:: evomol.neighborhood_strategy
    :members:
    :undoc-members:
    :show-inheritance:

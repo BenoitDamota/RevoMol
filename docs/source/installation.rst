@@ -53,3 +53,9 @@ To use generic cyclic features or scaffolds, you need to download the external d
     # TODO add link to gcf_CHEMBL_ZINC.txt
     # TODO add link to gcf_CHEMBL.txt
 
+
+To use checkmol you need to download the file `checkmol.pas` from the `checkmol repository <https://homepage.univie.ac.at/norbert.haider/download/chemistry/checkmol/>`_ :
+
+.. code-block:: bash
+
+    wget https://homepage.univie.ac.at/norbert.haider/download/chemistry/checkmol/checkmol.pas

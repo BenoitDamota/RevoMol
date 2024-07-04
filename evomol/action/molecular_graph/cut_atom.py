@@ -10,7 +10,7 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class CutAtomMolGraph(ActionMolGraph):
+class CutAtomMG(ActionMolGraph):
     """
     Cut an atom from the molecular graph.
     """
@@ -89,11 +89,11 @@ class CutAtomMolGraph(ActionMolGraph):
             charged_or_radical1 = charged_or_radical[atom_1]
             charged_or_radical2 = charged_or_radical[atom_2]
 
-            if charged_or_radical1 and charged_or_radical2:
+            if charged_or_radical1 and charged_or_radical2 and bond_1 + bond_12 <= 3:
                 if bond_1 != bond_2:
                     continue
                 action_list.append(
-                    CutAtomMolGraph(
+                    CutAtomMG(
                         molecule,
                         atom_to_cut,
                         atom_1,
@@ -106,9 +106,13 @@ class CutAtomMolGraph(ActionMolGraph):
             max_valence_1 = implicit_valences[atom_1] + bond_1
             max_valence_2 = implicit_valences[atom_2] + bond_2
 
-            if charged_or_radical1 and max_valence_2 >= bond_1:
+            if (
+                charged_or_radical1
+                and max_valence_2 >= bond_1
+                and bond_1 + bond_12 <= 3
+            ):
                 action_list.append(
-                    CutAtomMolGraph(
+                    CutAtomMG(
                         molecule,
                         atom_to_cut,
                         atom_1,
@@ -118,9 +122,13 @@ class CutAtomMolGraph(ActionMolGraph):
                 )
                 continue
 
-            if charged_or_radical2 and max_valence_1 >= bond_2:
+            if (
+                charged_or_radical2
+                and max_valence_1 >= bond_2
+                and bond_2 + bond_12 <= 3
+            ):
                 action_list.append(
-                    CutAtomMolGraph(
+                    CutAtomMG(
                         molecule,
                         atom_to_cut,
                         atom_1,
@@ -133,14 +141,15 @@ class CutAtomMolGraph(ActionMolGraph):
             if charged_or_radical1 or charged_or_radical2:
                 continue
 
-            action_list.append(
-                CutAtomMolGraph(
-                    molecule,
-                    atom_to_cut,
-                    atom_1,
-                    atom_2,
-                    bond_12 + min(bond_1, bond_2),
+            if min(bond_1, bond_2) + bond_12 <= 3:
+                action_list.append(
+                    CutAtomMG(
+                        molecule,
+                        atom_to_cut,
+                        atom_1,
+                        atom_2,
+                        bond_12 + min(bond_1, bond_2),
+                    )
                 )
-            )
 
         return action_list

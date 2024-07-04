@@ -24,7 +24,7 @@ class ActionMolGraph(Action):
     """
 
     @override
-    def apply(self) -> Molecule:
+    def _apply(self) -> Molecule:
         """Apply the action to the molecule.
 
         Raises:
@@ -42,9 +42,9 @@ class ActionMolGraph(Action):
         try:
             new_mol_graph.update_representation()
         except Exception as e:
-            raise ActionError(self, new_mol_graph.smiles, repr(e)) from e
+            raise ActionError(self, new_mol_graph.canonical_smiles, repr(e)) from e
 
-        return Molecule(new_mol_graph.smiles)
+        return Molecule(new_mol_graph.canonical_smiles)
 
     @abstractmethod
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:

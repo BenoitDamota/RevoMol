@@ -12,7 +12,7 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class ChangeBondMolGraph(ActionMolGraph):
+class ChangeBondMG(ActionMolGraph):
     """
     Changing a bond from any type to any type among no bond, single, double, triple.
 
@@ -88,15 +88,13 @@ class ChangeBondMolGraph(ActionMolGraph):
                         and not cls.avoid_bond_breaking
                     ):
                         action_list.append(
-                            ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
+                            ChangeBondMG(molecule, atom1, atom2, new_bond)
                         )
 
                 # Bond increment
                 # Bond can be incremented only if the new bond is less than
                 # the maximum bond that can be formed between the two atoms
                 elif max_bond >= new_bond:
-                    action_list.append(
-                        ChangeBondMolGraph(molecule, atom1, atom2, new_bond)
-                    )
+                    action_list.append(ChangeBondMG(molecule, atom1, atom2, new_bond))
 
         return action_list

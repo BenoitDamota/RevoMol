@@ -36,8 +36,14 @@ class Action(ABC):
     def __init__(self, molecule: molecule_module.Molecule) -> None:
         self.molecule: molecule_module.Molecule = molecule
 
-    @abstractmethod
     def apply(self) -> molecule_module.Molecule:
+        """Apply the action to the molecule."""
+        # remove the action from the molecule possible actions
+        self.molecule.remove_action(self)
+        return self._apply()
+
+    @abstractmethod
+    def _apply(self) -> molecule_module.Molecule:
         """Apply the action"""
 
     @classmethod

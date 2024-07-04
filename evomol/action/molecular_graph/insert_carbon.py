@@ -10,7 +10,7 @@ from evomol.representation import MolecularGraph, Molecule
 from .action_molecular_graph import ActionMolGraph
 
 
-class InsertCarbonMolGraph(ActionMolGraph):
+class InsertCarbonMG(ActionMolGraph):
     """
     Insert a carbon in the molecular graph between two atoms that have no formal charge.
     The new carbon is bonded with two single bonds to the two atoms.
@@ -85,9 +85,7 @@ class InsertCarbonMolGraph(ActionMolGraph):
                 # limit of 4 bonds for C so bond_type <= 2 for each atom
                 if bond_type <= 2:
                     action_list.append(
-                        InsertCarbonMolGraph(
-                            molecule, atom1, bond_type, atom2, bond_type
-                        )
+                        InsertCarbonMG(molecule, atom1, bond_type, atom2, bond_type)
                     )
                 continue
 
@@ -96,8 +94,8 @@ class InsertCarbonMolGraph(ActionMolGraph):
                 bond_to_1 = bond_type if charged_or_radical1 else 1
                 bond_to_2 = bond_type if charged_or_radical2 else 1
                 action_list.append(
-                    InsertCarbonMolGraph(molecule, atom1, bond_to_1, atom2, bond_to_2)
+                    InsertCarbonMG(molecule, atom1, bond_to_1, atom2, bond_to_2)
                 )
                 continue
-            action_list.append(InsertCarbonMolGraph(molecule, atom1, 1, atom2, 1))
+            action_list.append(InsertCarbonMG(molecule, atom1, 1, atom2, 1))
         return action_list
