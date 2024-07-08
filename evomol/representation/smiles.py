@@ -48,7 +48,8 @@ class SMILES(MoleculeRepresentation):
         # )
 
     def __repr__(self) -> str:
-        return f'SMILES("{self.smiles}")'
+        return '"' + self.smiles + '"'
+        # return f'SMILES("{self.smiles}")'
         # return f'SMILES("{self.representation()}")'
 
     def __eq__(self, value: object) -> bool:

@@ -22,6 +22,6 @@ matplotlib
 pytest
 furo
 typing_extensions
-PIL
 rdkit
 pillow
+typer
