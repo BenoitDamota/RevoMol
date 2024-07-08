@@ -103,7 +103,7 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
     # write results in csv file
     with open(output_csv, "w") as f:
         f.write(
-            "smiles,smiles_canonical,nb_atoms,sw_filter_chembl,sw_filter_zinc,"
+            "smiles_aromatic,smiles_kekulized,nb_atoms,sw_filter_chembl,sw_filter_zinc,"
             "nb_unknown_ecfp_chembl,nb_unknown_gcf_chembl,"
             "nb_unknown_ecfp_chembl_zinc,nb_unknown_gcf_chembl_zinc\n"
         )
