@@ -125,7 +125,9 @@ class Molecule:
         # if the possible actions have already been computed
         if self.possible_actions:
             return self.possible_actions
+
         self.possible_actions = {}
+        self.nb_actions = 0
 
         # compute the possible actions
         for representation in self.representations:
@@ -134,7 +136,7 @@ class Molecule:
                 list_actions = action.list_actions(self)
                 if list_actions:
                     current_actions[action.class_name()] = list_actions
-                    nb_actions += len(list_actions)
+                    self.nb_actions += len(list_actions)
             if current_actions:
                 self.possible_actions[representation.class_name()] = current_actions
         return self.possible_actions
@@ -153,7 +155,7 @@ class Molecule:
 
     def add_applied_action(self, action: action_module.Action) -> None:
         """Count the action as applied to the molecule."""
-        # self.applied_actions.add(action)
+        self.applied_actions.add(action)
 
     def get_representation(
         self, representation_class: type[TypeMoleculeRepresentation]

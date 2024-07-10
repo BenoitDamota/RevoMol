@@ -27,18 +27,14 @@ def is_valid_molecule(
     return True
 
 
-def list_neighbors(molecule: Molecule) -> list[Molecule]:
-    new_mols = []
-    molecule.list_all_possible_actions()
-    while molecule.nb_possible_actions() != 0:
-        action_space = list(molecule.possible_actions.keys())[0]
-        while (
-            molecule.possible_actions is not None
-            and molecule.possible_actions.get(action_space) is not None
-        ):
-            action = list(molecule.possible_actions[action_space].keys())[0]
-            new_mols.append(molecule.possible_actions[action_space][action][0].apply())
-    return new_mols
+def list_neighbors(molecule: Molecule) -> set[Molecule]:
+    molecule.compute_possible_actions()
+    return {
+        action.apply()
+        for representation in molecule.possible_actions.values()
+        for action_list in representation.values()
+        for action in action_list
+    }
 
 
 def find_neighbors(molecule: Molecule, max_depth: int) -> set[Molecule]:
@@ -70,7 +66,7 @@ def find_neighbors(molecule: Molecule, max_depth: int) -> set[Molecule]:
 
 def explore_smiles(
     starting_smiles: str, depth: int, evaluations: list[evaluator.Evaluation]
-) -> dict[str, int]:
+) -> tuple[set[str], set[str]]:
     """Explore the neighbors of a SMILES
 
     Args:
@@ -86,8 +82,13 @@ def explore_smiles(
     to_explore: set[str] = {starting_smiles}
 
     # dictionaries of SMILES and number of times it was found
-    found_valid: dict[str, int] = {starting_smiles: 1}
-    found_invalid: dict[str, int] = {}
+    found_valid: set[str] = set()
+    found_invalid: set[str] = set()
+
+    if is_valid_molecule(Molecule(starting_smiles), evaluations):
+        found_valid.add(starting_smiles)
+    else:
+        found_invalid.add(starting_smiles)
 
     while to_explore:
         # get the next SMILES to explore
@@ -99,17 +100,16 @@ def explore_smiles(
         # check if the neighbors are valid and add them to the set to_try
         for new_mol in new_mols:
             new_smi = str(new_mol)
-            if new_smi in found_valid:
-                found_valid[new_smi] += 1
-            elif new_smi in found_invalid:
-                found_invalid[new_smi] += 1
-            elif is_valid_molecule(new_mol, evaluations):
-                to_explore.add(new_smi)
-                found_valid[new_smi] = 1
-            else:
-                found_invalid[new_smi] = 1
+            if new_smi in found_valid or new_smi in found_invalid:
+                continue
 
-    return found_valid
+            if is_valid_molecule(new_mol, evaluations):
+                to_explore.add(new_smi)
+                found_valid.add(new_smi)
+            else:
+                found_invalid.add(new_smi)
+
+    return found_valid, found_invalid
 
 
 def enumerate_from_smiles(
@@ -157,24 +157,31 @@ def enumerate_from_smiles(
             evaluator.FilterUnknownECFP(threshold=0),
         ]
 
-    print("molecule,heavy_atom_limit,depth,eval,nb_molecules,time")
+    print("molecule,heavy_atom_limit,depth,eval,nb_valid,nb_invalid,time")
 
     start_time = time.time()
 
     can_smi = Molecule(start_smiles).get_representation(MolecularGraph).canonical_smiles
 
-    found = explore_smiles(can_smi, depth, evaluations)
+    found_valid, found_invalid = explore_smiles(can_smi, depth, evaluations)
 
     duration = time.time() - start_time
 
-    print(f"{can_smi},{nb_heavy_atoms},{depth},{eval_name},{len(found)},{duration:.2f}")
+    print(
+        f"{can_smi},{nb_heavy_atoms},{depth},{eval_name},{len(found_valid)},{len(found_invalid)},{duration:.2f}"
+    )
 
-    file_path = f"output/enumerate_{can_smi}_{eval_name}_{nb_heavy_atoms}.txt"
+    file_path = f"output/enumeration_from_{can_smi}_{eval_name}_{nb_heavy_atoms}.txt"
     with open(file_path, "w") as file:
-        for mol, nb in found.items():
-            file.write(f"{mol} {nb}\n")
+        for mol in found_valid:
+            if str(mol):
+                file.write(f"{mol}\n")
+            else:
+                file.write(f'""\n')
 
 
 if __name__ == "__main__":
     # parallel -j 20 python enumerate_smiles.py C {1} {2} 2 ::: chembl chembl_zinc ::: {1..10}
     typer.run(enumerate_from_smiles)
+
+    # enumerate_from_smiles("C", "chembl_zinc", 3, 2)
