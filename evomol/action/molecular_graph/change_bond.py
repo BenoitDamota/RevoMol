@@ -33,6 +33,20 @@ class ChangeBondMG(ActionMolGraph):
         self.bond_type: int = bond_type
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == ChangeBondMG
+            and self.molecule == other.molecule
+            and self.atom1 == other.atom1
+            and self.atom2 == other.atom2
+            and self.bond_type == other.bond_type
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         new_mol_graph.set_bond(self.atom1, self.atom2, self.bond_type)
 

@@ -39,7 +39,7 @@ class Action(ABC):
     def apply(self) -> molecule_module.Molecule:
         """Apply the action to the molecule."""
         # remove the action from the molecule possible actions
-        self.molecule.remove_action(self)
+        self.molecule.add_applied_action(self)
         return self._apply()
 
     @abstractmethod
@@ -55,6 +55,19 @@ class Action(ABC):
     def class_name(cls) -> str:
         """Return the class name of the action."""
         return cls.__name__
+
+    @abstractmethod
+    def __eq__(self, value: object) -> bool:
+        pass
+
+    @abstractmethod
+    def representation_name(self) -> str:
+        """Return the name in str of the representation used in the action."""
+
+    @abstractmethod
+    def __hash__(self) -> int:
+        """Return the hash of the action."""
+        return hash(self.__repr__())
 
 
 class ActionError(Exception):

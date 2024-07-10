@@ -122,7 +122,7 @@ class EvolutionaryAlgorithm:
                     index_selected: int = order_selection[current_selected]
 
                     current_molecule: Molecule = self.population[index_selected]
-                    nb_possible_actions: int = current_molecule.nb_possible_actions()
+                    nb_possible_actions: int = current_molecule.nb_remaining_actions()
 
                     if nb_possible_actions == 0:
                         current_selected += 1

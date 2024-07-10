@@ -32,6 +32,18 @@ class RemoveAtomMG(ActionMolGraph):
         self.atom_idx: int = atom_idx
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == RemoveAtomMG
+            and self.molecule == other.molecule
+            and self.atom_idx == other.atom_idx
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         """Remove the atom from the molecular graph.
 

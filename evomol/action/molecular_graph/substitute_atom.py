@@ -42,6 +42,19 @@ class SubstituteAtomMG(ActionMolGraph):
         self.new_type: str = new_type
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == SubstituteAtomMG
+            and self.molecule == other.molecule
+            and self.atom_idx == other.atom_idx
+            and self.new_type == other.new_type
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         new_mol_graph.replace_atom(self.atom_idx, self.new_type)
 

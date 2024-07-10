@@ -19,6 +19,14 @@ class XXXMG(ActionMolGraph):
     #     super().__init__(molecule)
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return other.__class__ == XXXMG and self.molecule == other.molecule
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         _ = new_mol_graph
 

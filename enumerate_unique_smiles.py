@@ -1,10 +1,12 @@
 import time
+import sys
 
 import typer
 
 from evomol import evaluation as evaluator
 from evomol.action import molecular_graph as mg
 from evomol.representation import SMILES, MolecularGraph, Molecule
+from evomol.action import Action
 
 
 def is_valid_molecule(
@@ -41,34 +43,56 @@ def list_neighbors(molecule: Molecule) -> list[Molecule]:
     return new_mols
 
 
-def find_neighbors(molecule: Molecule, max_depth: int) -> set[Molecule]:
-    """Iteratively find the neighbors of a molecule up to a certain depth
+def find_unique_neighbors(
+    molecule: Molecule,
+    depth: int,
+    found_valid: dict[Molecule, int],
+    found_invalid: dict[Molecule, int],
+):
+    to_explore: set[Molecule] = {molecule}
+    explored: set[Molecule] = set()
 
-    Args:
-        molecule (Molecule): Molecule to explore
-        max_depth (int): Maximum depth to explore
+    current_depth = 1
 
-    Returns:
-        set[Molecule]: set of molecules found
-    """
-    neighbors: set = set()
-    queue = {molecule}
-    depth = 1
+    while current_depth <= depth:
+        total_new_mols = []
+        while to_explore:
+            current_mol = to_explore.pop()
 
-    while depth <= max_depth:
-        next_queue = set()
-        for current_mol in queue:
-            for new_mol in list_neighbors(current_mol):
-                if new_mol not in neighbors:
-                    next_queue.add(new_mol)
-                    neighbors.add(new_mol)
-        queue = next_queue
-        depth += 1
+            total_new_mols.extend(list_neighbors(current_mol))
 
-    return neighbors
+        for new_mol in total_new_mols:
+            if new_mol in found_valid:
+                found_valid[new_mol] += 1
+                continue
+            if new_mol in found_invalid:
+                found_invalid[new_mol] += 1
+            if new_mol in explored:
+                continue
+
+            explored.add(new_mol)
+            if current_depth < depth:
+                to_explore.add(new_mol)
+
+        current_depth += 1
+
+    return explored
 
 
-def explore_smiles(
+"""
+A -> B -> C -> D
+
+Si on veut une profondeur de 3 de A:
+    on va lister tous les voisins de niveau 1 (B,C)
+    puis tous les voisins de niveau 2 (D,E,C)
+    puis tous les voisins de niveau 3 (F,G,H,C,D,B)
+    
+    puis on va filtrer l'ensemble
+
+"""
+
+
+def explore_smiles_unique(
     starting_smiles: str, depth: int, evaluations: list[evaluator.Evaluation]
 ) -> dict[str, int]:
     """Explore the neighbors of a SMILES
@@ -82,37 +106,40 @@ def explore_smiles(
         dict[str, int]: SMILES and number of times it was found
     """
 
-    # set of SMILES to explore
-    to_explore: set[str] = {starting_smiles}
+    molecule = Molecule(starting_smiles)
 
-    # dictionaries of SMILES and number of times it was found
-    found_valid: dict[str, int] = {starting_smiles: 1}
-    found_invalid: dict[str, int] = {}
+    # set of SMILES to explore
+    to_explore: set[Molecule] = set([molecule])
+
+    # dictionary of SMILES and number of times it was found
+    found_valid: dict[Molecule, int] = {molecule: 1}
+    found_invalid: dict[Molecule, int] = {}
 
     while to_explore:
         # get the next SMILES to explore
-        current_smiles: str = to_explore.pop()
+        current_molecule: Molecule = to_explore.pop()
 
         # find the neighbors of the current SMILES
-        new_mols = find_neighbors(Molecule(current_smiles), depth)
+        new_mols = find_unique_neighbors(
+            current_molecule, depth, found_valid, found_invalid
+        )
 
         # check if the neighbors are valid and add them to the set to_try
-        for new_mol in new_mols:
-            new_smi = str(new_mol)
-            if new_smi in found_valid:
-                found_valid[new_smi] += 1
-            elif new_smi in found_invalid:
-                found_invalid[new_smi] += 1
-            elif is_valid_molecule(new_mol, evaluations):
-                to_explore.add(new_smi)
-                found_valid[new_smi] = 1
-            else:
-                found_invalid[new_smi] = 1
+        for mol in new_mols:
+            if mol in found_valid:
+                continue
+            if mol in found_invalid:
+                continue
 
+            if is_valid_molecule(mol, evaluations):
+                to_explore.add(mol)
+                found_valid[mol] = 1
+            else:
+                found_invalid[mol] = 1
     return found_valid
 
 
-def enumerate_from_smiles(
+def enumerate_unique_from_smiles(
     start_smiles: str, eval_name: str, nb_heavy_atoms: int, depth: int
 ):
     """Enumerate the neighbors of a SMILES
@@ -126,6 +153,7 @@ def enumerate_from_smiles(
     Molecule.id_representation_class = SMILES
     Molecule.representations_class = [MolecularGraph]
     Molecule.max_heavy_atoms = nb_heavy_atoms
+
     Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
 
     MolecularGraph.action_space = [
@@ -140,6 +168,7 @@ def enumerate_from_smiles(
         mg.SubstituteAtomMG,
     ]
 
+    evaluations = []
     if eval_name == "chembl":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf1.txt"),
@@ -157,24 +186,41 @@ def enumerate_from_smiles(
             evaluator.FilterUnknownECFP(threshold=0),
         ]
 
+    start = time.time()
+
+    found = explore_smiles_unique(start_smiles, depth, evaluations)
+
+    duration = time.time() - start
+
     print("molecule,heavy_atom_limit,depth,eval,nb_molecules,time")
+    print(
+        ",".join(
+            map(
+                str,
+                [
+                    start_smiles,
+                    nb_heavy_atoms,
+                    depth,
+                    eval_name,
+                    len(found),
+                    f"{duration:.2f}",
+                ],
+            )
+        )
+    )
 
-    start_time = time.time()
+    file = f"output/enumerate_unique_{start_smiles}_{eval_name}_{nb_heavy_atoms}.txt"
 
-    can_smi = Molecule(start_smiles).get_representation(MolecularGraph).canonical_smiles
-
-    found = explore_smiles(can_smi, depth, evaluations)
-
-    duration = time.time() - start_time
-
-    print(f"{can_smi},{nb_heavy_atoms},{depth},{eval_name},{len(found)},{duration:.2f}")
-
-    file_path = f"output/enumerate_{can_smi}_{eval_name}_{nb_heavy_atoms}.txt"
-    with open(file_path, "w") as file:
+    with open(file, "w") as f:
         for mol, nb in found.items():
-            file.write(f"{mol} {nb}\n")
+            if mol == "":
+                f.write(f'"" {nb}\n')
+            else:
+                f.write(f"{mol} {nb}\n")
 
 
 if __name__ == "__main__":
-    # parallel -j 20 python enumerate_smiles.py C {1} {2} 2 ::: chembl chembl_zinc ::: {1..10}
-    typer.run(enumerate_from_smiles)
+    # parallel -j 20 python enumerate_unique_smiles.py C {1} {2} 2 ::: chembl chembl_zinc ::: {1..10}
+    print("this code doesn't work, there is some debugging to do")
+    sys.exit(0)
+    typer.run(enumerate_unique_from_smiles)

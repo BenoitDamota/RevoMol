@@ -33,6 +33,21 @@ class MoveGroupMG(ActionMolGraph):
         self.bond_type: int = bond_type
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == MoveGroupMG
+            and self.molecule == other.molecule
+            and self.atom_moving == other.atom_moving
+            and self.atom_staying == other.atom_staying
+            and self.atom_to_link == other.atom_to_link
+            and self.bond_type == other.bond_type
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # Removing the bond
         new_mol_graph.set_bond(self.atom_moving, self.atom_staying, 0)

@@ -32,6 +32,19 @@ class RemoveGroupMG(ActionMolGraph):
         self.bridge_atom_to_remove: int = bridge_atom_to_remove
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == RemoveGroupMG
+            and self.molecule == other.molecule
+            and self.bridge_atom_to_keep == other.bridge_atom_to_keep
+            and self.bridge_atom_to_remove == other.bridge_atom_to_remove
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # Remove the bond between the two bridge atoms
         new_mol_graph.set_bond(self.bridge_atom_to_keep, self.bridge_atom_to_remove, 0)

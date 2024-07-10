@@ -32,6 +32,21 @@ class CutAtomMG(ActionMolGraph):
         self.bond_type: int = bond_type
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == CutAtomMG
+            and self.molecule == other.molecule
+            and self.atom_to_cut == other.atom_to_cut
+            and self.atom1_to_bond == other.atom1_to_bond
+            and self.atom2_to_bond == other.atom2_to_bond
+            and self.bond_type == other.bond_type
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # remove bonds
         new_mol_graph.set_bond(self.atom_to_cut, self.atom1_to_bond, 0)

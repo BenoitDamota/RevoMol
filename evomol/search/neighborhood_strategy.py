@@ -46,8 +46,9 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
     ) -> list[Molecule]:
 
         nb_attempts: int = 0
+        molecule.compute_possible_actions()
         while nb_attempts < self.nb_max_tries:
-            if molecule.list_all_possible_actions() is None:
+            if molecule.nb_remaining_actions() == 0:
                 break
 
             valid: bool = True
@@ -58,7 +59,9 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
             except ActionError as e:
                 # print(e)
                 valid = False
-                raise e  # TODO ? should be a critical error ?
+                # TODO ? should be a critical error ?
+                # as only update_representation is supposed to crash
+                raise e
 
             for evaluation in evaluations:
                 if not valid:
@@ -94,24 +97,19 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
         for _ in range(self.depth):
             # print(f"Depth: {depth}")
             # list all possible actions
-            possible_actions: dict[str, dict[str, list[Action]]] = (
-                new_molecule.list_all_possible_actions()
-            )
-
-            # pprint_action_space(possible_actions)
+            if not new_molecule.possible_actions:
+                new_molecule.compute_possible_actions()
 
             # select a random representation
-            representation: str = random.choice(list(possible_actions.keys()))
+            representation: list[list[Action]] = random.choice(
+                new_molecule.remaining_actions
+            )
 
             # select a random action space
-            action_space: str = random.choice(
-                list(possible_actions[representation].keys())
-            )
+            action_space: list[Action] = random.choice(representation)
 
             # select a random action
-            action: Action = random.choice(
-                possible_actions[representation][action_space]
-            )
+            action: Action = random.choice(action_space)
 
             # print(f"Applying action: {action}")
             new_molecule = action.apply()

@@ -55,3 +55,7 @@ class ActionMolGraph(Action):
             new_mol_graph (MolecularGraph): Molecular graph to which the action
             is applied. The method should modify this object in place.
         """
+
+    @override
+    def representation_name(self) -> str:
+        return MolecularGraph.class_name()

@@ -105,6 +105,8 @@ class Molecule:
         ]
         self._values: dict[str, object] = {}
         self.possible_actions: dict[str, dict[str, list[action_module.Action]]] = {}
+        self.applied_actions: set[action_module.Action] = set()
+        self.nb_actions: int = 0
 
     def list_available_actions_space(
         self,
@@ -116,17 +118,14 @@ class Molecule:
             if representation.action_space
         }
 
-    def list_all_possible_actions(
+    def compute_possible_actions(
         self,
     ) -> dict[str, dict[str, list[action_module.Action]]]:
         """List all possible actions for the molecule."""
         # if the possible actions have already been computed
-        if self.possible_actions != {} and self.possible_actions is not None:
+        if self.possible_actions:
             return self.possible_actions
-
-        # if all the possible actions have been applied (all removed from the list)
-        if self.possible_actions is None:
-            return None
+        self.possible_actions = {}
 
         # compute the possible actions
         for representation in self.representations:
@@ -135,6 +134,7 @@ class Molecule:
                 list_actions = action.list_actions(self)
                 if list_actions:
                     current_actions[action.class_name()] = list_actions
+                    nb_actions += len(list_actions)
             if current_actions:
                 self.possible_actions[representation.class_name()] = current_actions
         return self.possible_actions
@@ -147,38 +147,13 @@ class Molecule:
         #     for representation in self.representations
         # }
 
-    def nb_possible_actions(self) -> int:
+    def nb_remaining_actions(self) -> int:
         """Return the number of possible actions for the molecule."""
-        if self.possible_actions is None:
-            return 0
-        if not self.possible_actions:
-            self.list_all_possible_actions()
+        return self.nb_actions - len(self.applied_actions)
 
-        count = 0
-        for representation in self.possible_actions.values():
-            for actions in representation.values():
-                count += len(actions)
-        return count
-
-    def remove_action(self, action: action_module.Action) -> None:
-        """Remove the action from the possible actions."""
-        repr_name = ""
-        for representation_name, actions_dict in self.possible_actions.items():
-            if repr_name:
-                break
-            for action_name in actions_dict:
-                if action.class_name() == action_name:
-                    repr_name = representation_name
-                    break
-        if not repr_name:
-            raise ValueError(f"Action {action} not found")
-        self.possible_actions[repr_name][action.class_name()].remove(action)
-        if not self.possible_actions[repr_name][action.class_name()]:
-            self.possible_actions[repr_name].pop(action.class_name())
-        if not self.possible_actions[repr_name]:
-            self.possible_actions.pop(repr_name)
-        if not self.possible_actions:
-            self.possible_actions = None
+    def add_applied_action(self, action: action_module.Action) -> None:
+        """Count the action as applied to the molecule."""
+        # self.applied_actions.add(action)
 
     def get_representation(
         self, representation_class: type[TypeMoleculeRepresentation]
@@ -212,7 +187,6 @@ class Molecule:
         return (
             isinstance(value, Molecule)
             and self.id_representation == value.id_representation
-            and self.representations == value.representations
         )
 
     def __hash__(self) -> int:

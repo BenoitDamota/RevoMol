@@ -37,6 +37,19 @@ class AddAtomMG(ActionMolGraph):
         self.atom_type: str = atom_type
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == AddAtomMG
+            and self.molecule == other.molecule
+            and self.index_atom == other.index_atom
+            and self.atom_type == other.atom_type
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         """Add an atom of type self.atom_type to the molecular graph.
         If the graph is not empty, a bond is created between the new atom and

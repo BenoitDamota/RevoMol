@@ -33,6 +33,21 @@ class InsertCarbonMG(ActionMolGraph):
         self.bond_to_2: int = bond_to_2
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == InsertCarbonMG
+            and self.molecule == other.molecule
+            and self.atom1_idx_to_bond == other.atom1_idx_to_bond
+            and self.bond_to_1 == other.bond_to_1
+            and self.atom2_idx_to_bond == other.atom2_idx_to_bond
+            and self.bond_to_2 == other.bond_to_2
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         # Removing bond between atoms
         new_mol_graph.set_bond(self.atom1_idx_to_bond, self.atom2_idx_to_bond, 0)

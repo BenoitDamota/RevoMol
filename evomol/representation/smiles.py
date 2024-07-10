@@ -38,7 +38,7 @@ class SMILES(MoleculeRepresentation):
 
     @override
     def representation(self) -> str:
-        return self.smiles if self.smiles else "Empty SMILES"
+        return self.smiles if self.smiles else '""'
         # return (
         #     f"{
         # link('http://hulab.rxnfinder.org/smi2img/' + self.smiles,
@@ -46,6 +46,9 @@ class SMILES(MoleculeRepresentation):
         #     if self.smiles
         #     else "Empty SMILES"
         # )
+
+    def __str__(self) -> str:
+        return self.smiles
 
     def __repr__(self) -> str:
         return '"' + self.smiles + '"'

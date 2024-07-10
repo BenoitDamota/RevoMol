@@ -49,6 +49,20 @@ class AddGroupMG(ActionMolGraph):
         self.added_group_atom: int = added_group_atom
 
     @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            other.__class__ == AddGroupMG
+            and self.molecule == other.molecule
+            and self.atom_to_link == other.atom_to_link
+            and self.smiles == other.smiles
+            and self.added_group_atom == other.added_group
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.__repr__())
+
+    @override
     def apply_action(self, new_mol_graph: MolecularGraph) -> None:
         if new_mol_graph.nb_atoms == 0:
             # If the molecule is empty
