@@ -160,13 +160,14 @@ class UnknownGCF(Evaluation):
 class FilterUnknownGCF(Evaluation):
     """Filter molecules with too many unknown GenericCyclicFeatures."""
 
-    def __init__(self, threshold: int = 0):
+    def __init__(self, threshold: int = 0, name: str = "chembl"):
         super().__init__("FilterUnknownGCF")
+        self.eval_name: str = f"GenericCyclicFeatures_{name}"
         self.threshold = threshold
 
     @override
     def _evaluate(self, molecule: Molecule) -> bool:
-        value: int = molecule.value("GenericCyclicFeatures")
+        value = molecule.value(self.eval_name)
         if value is None:
             raise RuntimeError(
                 "The molecule does not have a GenericCyclicFeatures value."

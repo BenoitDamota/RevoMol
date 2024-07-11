@@ -80,13 +80,19 @@ class UnknownECFP(Evaluation):
 class FilterUnknownECFP(Evaluation):
     """Filter molecules with too many unknown ECFP."""
 
-    def __init__(self, threshold: int = 0):
+    def __init__(self, threshold: int = 0, name="chembl"):
         super().__init__("FilterUnknownECFP")
+        self.eval_name: str = f"UnknownECFP_{name}"
         self.threshold = threshold
 
     @override
     def _evaluate(self, molecule: Molecule) -> bool:
-        if molecule.value("UnknownECFP") > self.threshold:
+        value = molecule.value(self.eval_name)
+        if value is None:
+            raise RuntimeError(
+                "The molecule does not have a UnknownECFP value."
+            )  # TODO rendre le message plus clair
+        if value > self.threshold:
             raise EvaluationError(
                 "The molecule contains more unknown ECFP than allowed "
                 f"({self.threshold})."

@@ -143,22 +143,22 @@ def enumerate_from_smiles(
     if eval_name == "chembl":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl"),
-            evaluator.FilterUnknownGCF(threshold=0),
+            evaluator.FilterUnknownGCF(threshold=0, name="chembl"),
             evaluator.UnknownECFP(
                 path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
             ),
-            evaluator.FilterUnknownECFP(threshold=0),
+            evaluator.FilterUnknownECFP(threshold=0, name="chembl"),
         ]
     elif eval_name == "chembl_zinc":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc"),
-            evaluator.FilterUnknownGCF(threshold=0),
+            evaluator.FilterUnknownGCF(threshold=0, name="chembl_zinc"),
             evaluator.UnknownECFP(
                 path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
                 radius=2,
                 name="chembl_zinc",
             ),
-            evaluator.FilterUnknownECFP(threshold=0),
+            evaluator.FilterUnknownECFP(threshold=0, name="chembl_zinc"),
         ]
 
     print("molecule,heavy_atom_limit,depth,eval,nb_valid,nb_invalid,time")

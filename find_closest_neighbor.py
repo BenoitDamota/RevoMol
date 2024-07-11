@@ -76,22 +76,22 @@ def find_closest_neighbors(start_smiles: str, eval_name: str, nb_heavy_atoms: in
     if eval_name == "chembl":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl"),
-            evaluator.FilterUnknownGCF(threshold=0),
+            evaluator.FilterUnknownGCF(threshold=0, name="chembl"),
             evaluator.UnknownECFP(
                 path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
             ),
-            evaluator.FilterUnknownECFP(threshold=0),
+            evaluator.FilterUnknownECFP(threshold=0, name="chembl"),
         ]
     elif eval_name == "chembl_zinc":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc"),
-            evaluator.FilterUnknownGCF(threshold=0),
+            evaluator.FilterUnknownGCF(threshold=0, name="chembl_zinc"),
             evaluator.UnknownECFP(
                 path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
                 radius=2,
                 name="chembl_zinc",
             ),
-            evaluator.FilterUnknownECFP(threshold=0),
+            evaluator.FilterUnknownECFP(threshold=0, name="chembl_zinc"),
         ]
 
     valid_mols: dict[str, int] = {}
@@ -212,22 +212,22 @@ def find_closest_neighbors_unique(
     if eval_name == "chembl":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl"),
-            evaluator.FilterUnknownGCF(threshold=0),
+            evaluator.FilterUnknownGCF(threshold=0, name="chembl"),
             evaluator.UnknownECFP(
                 path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
             ),
-            evaluator.FilterUnknownECFP(threshold=0),
+            evaluator.FilterUnknownECFP(threshold=0, name="chembl"),
         ]
     elif eval_name == "chembl_zinc":
         evaluations = [
             evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc"),
-            evaluator.FilterUnknownGCF(threshold=0),
+            evaluator.FilterUnknownGCF(threshold=0, name="chembl_zinc"),
             evaluator.UnknownECFP(
                 path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
                 radius=2,
                 name="chembl_zinc",
             ),
-            evaluator.FilterUnknownECFP(threshold=0),
+            evaluator.FilterUnknownECFP(threshold=0, name="chembl_zinc"),
         ]
 
     valid_mols: dict[str, int] = {}
