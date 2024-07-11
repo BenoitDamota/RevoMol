@@ -265,7 +265,7 @@ def neighbors_validity_tester():
     evaluations = [
         evaluator.UnknownGCF(),
         evaluator.FilterUnknownGCF(threshold=0),
-        evaluator.UnknownECFP(radius=2),
+        evaluator.UnknownECFP(),
         evaluator.FilterUnknownECFP(threshold=0),
     ]
 

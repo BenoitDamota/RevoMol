@@ -142,17 +142,21 @@ def enumerate_from_smiles(
 
     if eval_name == "chembl":
         evaluations = [
-            evaluator.UnknownGCF(path_db="external_data/gcf1.txt"),
+            evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl"),
             evaluator.FilterUnknownGCF(threshold=0),
-            evaluator.UnknownECFP(path_db="external_data/ecfp4_ChEMBL.txt", radius=2),
+            evaluator.UnknownECFP(
+                path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
+            ),
             evaluator.FilterUnknownECFP(threshold=0),
         ]
     elif eval_name == "chembl_zinc":
         evaluations = [
-            evaluator.UnknownGCF(path_db="external_data/gcf2.txt"),
+            evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc"),
             evaluator.FilterUnknownGCF(threshold=0),
             evaluator.UnknownECFP(
-                path_db="external_data/ecfp4_ChEMBL_ZINC.txt", radius=2
+                path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
+                radius=2,
+                name="chembl_zinc",
             ),
             evaluator.FilterUnknownECFP(threshold=0),
         ]

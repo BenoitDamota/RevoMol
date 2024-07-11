@@ -29,6 +29,7 @@ class UnknownECFP(Evaluation):
         self,
         path_db: str = os.path.join("external_data", "ecfp4_ChEMBL.txt"),
         radius: int = 2,
+        name: str = "chembl",
     ):
         """
         Init FilterECFP with the path to the reference database and the radius.
@@ -37,11 +38,13 @@ class UnknownECFP(Evaluation):
 
         Args:
             path_db (str): file that contains the reference list of ECFC4
-                fingerprints keys
+                fingerprints keys.
             radius (int, optional): radius if the ECFP fingerprint
                 (2 for ECFP4, 1 for ECFP2). Defaults to 2.
+            name (str, optional): name of the evaluation. Defaults to "chembl".
+                use "chembl_zinc" for ZINC database.
         """
-        super().__init__("UnknownECFP")
+        super().__init__(f"UnknownECFP_{name}")
 
         self.radius = radius
 

@@ -121,12 +121,22 @@ class UnknownGCF(Evaluation):
 
     def __init__(
         self,
-        path_db: str = os.path.join("external_data", "gcf2.txt"),
+        path_db: str = os.path.join("external_data", "gcf1.txt"),
+        name: str = "chembl",
     ):
+        """Init UnknownGCF with the path to the reference database.
+
+        Args:
+            path_db (str, optional): file that contains the reference list of
+                generic cyclic features (GCF) keys.
+                Defaults to os.path.join("external_data", "gcf1.txt").
+                Use "external_data/gcf2.txt" for chembl_zinc database.
+            name (str, optional): name of the database used.
+                Defaults to "chembl" for gcf1.txt.
+                Use "chembl_zinc" for gcf2.txt.
         """
-        "external_data/gcf1.txt" if ChEMBL and not ZINC
-        """
-        super().__init__("GenericCyclicFeatures")
+
+        super().__init__(f"GenericCyclicFeatures_{name}")
 
         with open(path_db, encoding="utf8") as f:
             self.smiles_list: frozenset[str] = frozenset(

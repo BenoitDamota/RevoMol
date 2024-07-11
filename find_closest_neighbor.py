@@ -17,12 +17,12 @@ def find_neighbors(molecule: Molecule, depth: int) -> list[Molecule]:
         list[Molecule]: List of molecules found
     """
     # list all possible actions in the molecule representation
-    molecule.list_all_possible_actions()
+    molecule.compute_possible_actions()
 
     new_mols = []
 
     # while there are possible actions
-    while molecule.nb_possible_actions() != 0:
+    while molecule.nb_remaining_actions() != 0:
         # get the first action space
         action_space = list(molecule.possible_actions.keys())[0]
         # while there are possible actions in the action space
@@ -75,17 +75,21 @@ def find_closest_neighbors(start_smiles: str, eval_name: str, nb_heavy_atoms: in
     evaluations = []
     if eval_name == "chembl":
         evaluations = [
-            evaluator.UnknownGCF(path_db="external_data/gcf1.txt"),
+            evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl"),
             evaluator.FilterUnknownGCF(threshold=0),
-            evaluator.UnknownECFP(path_db="external_data/ecfp4_ChEMBL.txt", radius=2),
+            evaluator.UnknownECFP(
+                path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
+            ),
             evaluator.FilterUnknownECFP(threshold=0),
         ]
     elif eval_name == "chembl_zinc":
         evaluations = [
-            evaluator.UnknownGCF(path_db="external_data/gcf2.txt"),
+            evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc"),
             evaluator.FilterUnknownGCF(threshold=0),
             evaluator.UnknownECFP(
-                path_db="external_data/ecfp4_ChEMBL_ZINC.txt", radius=2
+                path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
+                radius=2,
+                name="chembl_zinc",
             ),
             evaluator.FilterUnknownECFP(threshold=0),
         ]
@@ -154,8 +158,8 @@ def find_unique_neighbors(
         current_depth = found_molecules[current_mol].min_depth
         if current_depth >= max_depth:
             continue
-        current_mol.list_all_possible_actions()
-        while current_mol.nb_possible_actions() != 0:
+        current_mol.compute_possible_actions()
+        while current_mol.nb_remaining_actions() != 0:
             action_space = list(current_mol.possible_actions.keys())[0]
             while (
                 current_mol.possible_actions is not None
@@ -207,17 +211,21 @@ def find_closest_neighbors_unique(
     evaluations = []
     if eval_name == "chembl":
         evaluations = [
-            evaluator.UnknownGCF(path_db="external_data/gcf1.txt"),
+            evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl"),
             evaluator.FilterUnknownGCF(threshold=0),
-            evaluator.UnknownECFP(path_db="external_data/ecfp4_ChEMBL.txt", radius=2),
+            evaluator.UnknownECFP(
+                path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
+            ),
             evaluator.FilterUnknownECFP(threshold=0),
         ]
     elif eval_name == "chembl_zinc":
         evaluations = [
-            evaluator.UnknownGCF(path_db="external_data/gcf2.txt"),
+            evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc"),
             evaluator.FilterUnknownGCF(threshold=0),
             evaluator.UnknownECFP(
-                path_db="external_data/ecfp4_ChEMBL_ZINC.txt", radius=2
+                path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
+                radius=2,
+                name="chembl_zinc",
             ),
             evaluator.FilterUnknownECFP(threshold=0),
         ]

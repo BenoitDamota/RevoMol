@@ -47,8 +47,6 @@ value: dict {
     'swscore_ChEMBL',  # % of ECFP4 of the molecule that belong to ChEMBL
     'swscore_ZINC',  # % of ECFP4 of the molecule that belong to ZINC or ChEMBL
 }
-
-
 """
 
 from multiprocessing import Process, Manager, Queue
@@ -102,12 +100,6 @@ def evaluateMolecule(
         if not valid:
             continue
 
-        # evaluate the molecule
-        nb_unknown_gcf_chembl = eval_gcf_chembl.evaluate(mol)
-        nb_unknown_ecfp_chembl = eval_ecfp_chembl.evaluate(mol)
-        nb_unknown_gcf_chembl_zinc = eval_gcf_chembl_zinc.evaluate(mol)
-        nb_unknown_ecfp_chembl_zinc = eval_ecfp_chembl_zinc.evaluate(mol)
-
         results.append(
             ",".join(
                 map(
@@ -118,10 +110,10 @@ def evaluateMolecule(
                         nb_atoms,
                         swscore_ChEMBL,
                         swscore_ZINC,
-                        nb_unknown_gcf_chembl,
-                        nb_unknown_ecfp_chembl,
-                        nb_unknown_gcf_chembl_zinc,
-                        nb_unknown_ecfp_chembl_zinc,
+                        eval_gcf_chembl.evaluate(mol),
+                        eval_ecfp_chembl.evaluate(mol),
+                        eval_gcf_chembl_zinc.evaluate(mol),
+                        eval_ecfp_chembl_zinc.evaluate(mol),
                     ),
                 )
             )
@@ -142,13 +134,17 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
     Molecule.representations_class = [MolecularGraph]
     Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
 
-    eval_gcf_chembl = evaluator.UnknownGCF(path_db="external_data/gcf1.txt")
-    eval_ecfp_chembl = evaluator.UnknownECFP(
-        path_db="external_data/ecfp4_ChEMBL.txt", radius=2
+    eval_gcf_chembl = evaluator.UnknownGCF(
+        path_db="external_data/gcf1.txt", name="chembl"
     )
-    eval_gcf_chembl_zinc = evaluator.UnknownGCF(path_db="external_data/gcf2.txt")
+    eval_ecfp_chembl = evaluator.UnknownECFP(
+        path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
+    )
+    eval_gcf_chembl_zinc = evaluator.UnknownGCF(
+        path_db="external_data/gcf2.txt", name="chembl_zinc"
+    )
     eval_ecfp_chembl_zinc = evaluator.UnknownECFP(
-        path_db="external_data/ecfp4_ChEMBL_ZINC.txt", radius=2
+        path_db="external_data/ecfp4_ChEMBL_ZINC.txt", radius=2, name="chembl_zinc"
     )
 
     # prepare the processes
@@ -194,8 +190,8 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
     with open(output_csv, "w") as f:
         f.write(
             "smiles_aromatic,smiles_kekulized,nb_atoms,sw_filter_chembl,sw_filter_zinc,"
-            "nb_unknown_ecfp_chembl,nb_unknown_gcf_chembl,"
-            "nb_unknown_ecfp_chembl_zinc,nb_unknown_gcf_chembl_zinc\n"
+            "nb_unknown_gcf_chembl,nb_unknown_ecfp_chembl,"
+            "nb_unknown_gcf_chembl_zinc,nb_unknown_ecfp_chembl_zinc\n"
         )
         for result in results:
             f.write(result + "\n")
@@ -203,10 +199,10 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
 
 if __name__ == "__main__":
 
-    # python convert_json_to_csv.py output/other_datasets/Evo10_neutral_dict.json output/other_datasets/Evo10.csv 32
-    # python convert_json_to_csv.py output/other_datasets/ChEMBL_neutral_dict.json output/other_datasets/ChEMBL.csv 32
-    # python convert_json_to_csv.py output/other_datasets/GDBChEMBL_neutral_dict.json output/other_datasets/GDBChEMBL.csv 32
-    # python convert_json_to_csv.py output/other_datasets/ZINC_neutral_dict.json output/other_datasets/ZINC.csv 32
+    # python convert_json_to_csv.py external_data/smiles_datasets/Evo10_neutral_dict.json external_data/smiles_datasets/Evo10.csv 32
+    # python convert_json_to_csv.py external_data/smiles_datasets/ChEMBL_neutral_dict.json external_data/smiles_datasets/ChEMBL.csv 32
+    # python convert_json_to_csv.py external_data/smiles_datasets/GDBChEMBL_neutral_dict.json external_data/smiles_datasets/GDBChEMBL.csv 32
+    # python convert_json_to_csv.py external_data/smiles_datasets/ZINC_neutral_dict.json external_data/smiles_datasets/ZINC.csv 32
 
     typer.run(convert_dataset)
 
@@ -215,8 +211,8 @@ if __name__ == "__main__":
     # database = "ZINC"
     # database = "Evo10"
 
-    # input_json = f"output/other_datasets/{database}_neutral_dict.json"
+    # input_json = f"external_data/smiles_datasets/{database}_neutral_dict.json"
 
-    # output_csv = f"output/other_datasets/{database}.csv"
+    # output_csv = f"external_data/smiles_datasets/{database}.csv"
 
-    # convert_dataset(input_json, output_csv)
+    # convert_dataset(input_json, output_csv, 1)
