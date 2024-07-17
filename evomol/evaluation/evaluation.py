@@ -87,3 +87,21 @@ class Function(Evaluation):
     @override
     def _evaluate(self, molecule: Molecule) -> Any:
         return self.function(molecule)
+
+
+def is_valid_molecule(molecule: Molecule, evaluations: list[Evaluation]) -> bool:
+    """Check if a molecule is valid according to a list of evaluations.
+
+    Args:
+        molecule (Molecule): Molecule to check
+        evaluations (list[Evaluation]): filter and evaluations to apply
+
+    Returns:
+        bool: True if the molecule is valid
+    """
+    for eval_ in evaluations:
+        try:
+            eval_.evaluate(molecule)
+        except EvaluationError:
+            return False
+    return True

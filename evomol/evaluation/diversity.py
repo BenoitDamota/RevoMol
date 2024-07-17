@@ -148,11 +148,12 @@ def checkmol(molecule: Molecule) -> list[str]:
     """
     Extracting checkmol descriptors from given molecular graph.
     see https://homepage.univie.ac.at/norbert.haider/cheminf/cmmm.html
+
+    This code is not tested, look how to import checkmol in the code
     """
 
     obabel_cmd = "obabel" + ' "-:%s" -omol -O %s 2>/dev/null'
 
-    # TODO change the path and see if it works
     checkmol_cmd = os.path.join("external_data", "checkmol") + " %s > %s"
 
     smiles = molecule.get_representation(MolecularGraph).aromatic_canonical_smiles
@@ -197,14 +198,14 @@ class Descriptor(Evaluation):
     def __init__(
         self,
         descriptor_name: str,
-        function: Callable[[Molecule], list[str]],
+        function: Callable[[Molecule], list[int] | list[str]],
         nb_max_descriptors: int,
     ) -> None:
         super().__init__(f"Descriptor_{descriptor_name}")
         self.descriptor_name: str = descriptor_name
         self.nb_max_descriptors: int = nb_max_descriptors
-        self.function: Callable[[Molecule], list[str]] = function
-        self.descriptor_to_index: dict[str, int] = {}
+        self.function: Callable[[Molecule], list[int] | list[str]] = function
+        self.descriptor_to_index: dict[str | int, int] = {}
 
     @override
     def _evaluate(self, molecule: Molecule) -> list[int]:
@@ -213,7 +214,7 @@ class Descriptor(Evaluation):
         indexes: list[int] = [self.get_index(descriptor) for descriptor in descriptors]
         return indexes
 
-    def get_index(self, descriptor: str) -> int:
+    def get_index(self, descriptor: str | int) -> int:
         """Get the index of the descriptor.
 
         Args:
@@ -251,7 +252,8 @@ class Diversity:
         new_molecule: Molecule,
         molecule_to_replace: Molecule,
     ) -> float:
-        """Evaluate the diversity of the new molecule compared to the molecule to replace.
+        """Evaluate the diversity of the new molecule compared to the molecule
+        to replace.
 
         Args:
             new_molecule (Molecule): New molecule to evaluate.

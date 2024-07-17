@@ -42,13 +42,13 @@ def zinc_normalized_cycle_score(molecule: Molecule) -> float:
     Returns:
         float: The normalized cycle score of the molecule.
     """
-    cycle_score: float = molecule.value("CycleScore")
+    cycle_score_: float = molecule.value("CycleScore")
 
     # normalization constants
     # statistics from 250k_rndm_zinc_drugs_clean.smi
     cycle_mean: float = -0.0485696876403053
     cycle_std: float = 0.2860212110245455
-    normalized_cycle: float = (cycle_score - cycle_mean) / cycle_std
+    normalized_cycle: float = (cycle_score_ - cycle_mean) / cycle_std
 
     return normalized_cycle
 

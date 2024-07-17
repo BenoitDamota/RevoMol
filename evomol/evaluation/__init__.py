@@ -8,6 +8,7 @@ from .evaluation import (
     EvaluationError as EvaluationError,
     Evaluation as Evaluation,
     Function as Function,
+    is_valid_molecule as is_valid_molecule,
 )
 
 from .cl_score import CLScore as CLScore
@@ -22,12 +23,10 @@ from .generic_cyclic_features import (
     FilterUnknownGCF as FilterUnknownGCF,
 )
 
-from .isomer import Isomer as Isomer
 from .logp import LogP as LogP, ZincNormalizedLogP as ZincNormalizedLogP
 from .nb_perturbations import NPerturbations as NPerturbations
 from .qed import QED as QED
 from .rd_filters import RDFilters as RDFilters
-from .rediscovery import Rediscovery as Rediscovery
 from .sa_score import (
     SAScore as SAScore,
     NormalizedSAScore as NormalizedSAScore,
@@ -49,3 +48,7 @@ from .diversity import (
     checkmol as checkmol,
     ecfp4 as ecfp4,
 )
+
+# removed to avoid guacamol dependency
+# from .isomer import Isomer as Isomer
+# from .rediscovery import Rediscovery as Rediscovery

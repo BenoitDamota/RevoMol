@@ -80,7 +80,7 @@ class UnknownECFP(Evaluation):
 class FilterUnknownECFP(Evaluation):
     """Filter molecules with too many unknown ECFP."""
 
-    def __init__(self, threshold: int = 0, name="chembl"):
+    def __init__(self, threshold: int = 0, name: str = "chembl"):
         super().__init__("FilterUnknownECFP")
         self.eval_name: str = f"UnknownECFP_{name}"
         self.threshold = threshold
