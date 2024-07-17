@@ -38,9 +38,10 @@ class AddAtomMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AddAtomMG):
+            return False
         return (
-            other.__class__ == AddAtomMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.index_atom == other.index_atom
             and self.atom_type == other.atom_type
         )

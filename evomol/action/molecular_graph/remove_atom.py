@@ -33,11 +33,9 @@ class RemoveAtomMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
-        return (
-            other.__class__ == RemoveAtomMG
-            and self.molecule == other.molecule
-            and self.atom_idx == other.atom_idx
-        )
+        if not isinstance(other, RemoveAtomMG):
+            return False
+        return self.molecule == other.molecule and self.atom_idx == other.atom_idx
 
     @override
     def __hash__(self) -> int:

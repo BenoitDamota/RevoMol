@@ -20,7 +20,9 @@ class XXXMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
-        return other.__class__ == XXXMG and self.molecule == other.molecule
+        if not isinstance(other, XXXMG):
+            return False
+        return self.molecule == other.molecule
 
     @override
     def __hash__(self) -> int:

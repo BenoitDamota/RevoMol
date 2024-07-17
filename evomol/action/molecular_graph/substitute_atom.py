@@ -43,9 +43,10 @@ class SubstituteAtomMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SubstituteAtomMG):
+            return False
         return (
-            other.__class__ == SubstituteAtomMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.atom_idx == other.atom_idx
             and self.new_type == other.new_type
         )

@@ -34,9 +34,10 @@ class ChangeBondMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ChangeBondMG):
+            return False
         return (
-            other.__class__ == ChangeBondMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.atom1 == other.atom1
             and self.atom2 == other.atom2
             and self.bond_type == other.bond_type

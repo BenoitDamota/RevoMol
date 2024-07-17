@@ -34,9 +34,10 @@ class MoveGroupMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MoveGroupMG):
+            return False
         return (
-            other.__class__ == MoveGroupMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.atom_moving == other.atom_moving
             and self.atom_staying == other.atom_staying
             and self.atom_to_link == other.atom_to_link

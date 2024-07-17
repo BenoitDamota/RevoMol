@@ -50,12 +50,13 @@ class AddGroupMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AddGroupMG):
+            return False
         return (
-            other.__class__ == AddGroupMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.atom_to_link == other.atom_to_link
             and self.smiles == other.smiles
-            and self.added_group_atom == other.added_group
+            and self.added_group_atom == other.added_group_atom
         )
 
     @override

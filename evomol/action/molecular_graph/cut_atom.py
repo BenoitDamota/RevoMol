@@ -33,9 +33,10 @@ class CutAtomMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CutAtomMG):
+            return False
         return (
-            other.__class__ == CutAtomMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.atom_to_cut == other.atom_to_cut
             and self.atom1_to_bond == other.atom1_to_bond
             and self.atom2_to_bond == other.atom2_to_bond

@@ -33,9 +33,10 @@ class RemoveGroupMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RemoveGroupMG):
+            return False
         return (
-            other.__class__ == RemoveGroupMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.bridge_atom_to_keep == other.bridge_atom_to_keep
             and self.bridge_atom_to_remove == other.bridge_atom_to_remove
         )

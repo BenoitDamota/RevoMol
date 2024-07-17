@@ -34,9 +34,10 @@ class InsertCarbonMG(ActionMolGraph):
 
     @override
     def __eq__(self, other: object) -> bool:
+        if not isinstance(other, InsertCarbonMG):
+            return False
         return (
-            other.__class__ == InsertCarbonMG
-            and self.molecule == other.molecule
+            self.molecule == other.molecule
             and self.atom1_idx_to_bond == other.atom1_idx_to_bond
             and self.bond_to_1 == other.bond_to_1
             and self.atom2_idx_to_bond == other.atom2_idx_to_bond
