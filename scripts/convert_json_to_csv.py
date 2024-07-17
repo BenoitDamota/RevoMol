@@ -51,8 +51,14 @@ value: dict {
 
 from multiprocessing import Process, Manager, Queue
 import json
+import sys
+import os
 
 import typer
+
+
+# Add the parent directory to the path to import the module evomol
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from evomol import evaluation as evaluator
 from evomol.representation import SMILES, MolecularGraph, Molecule
@@ -199,10 +205,10 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
 
 if __name__ == "__main__":
 
-    # python convert_json_to_csv.py external_data/smiles_datasets/Evo10_neutral_dict.json external_data/smiles_datasets/Evo10.csv 32
-    # python convert_json_to_csv.py external_data/smiles_datasets/ChEMBL_neutral_dict.json external_data/smiles_datasets/ChEMBL.csv 32
-    # python convert_json_to_csv.py external_data/smiles_datasets/GDBChEMBL_neutral_dict.json external_data/smiles_datasets/GDBChEMBL.csv 32
-    # python convert_json_to_csv.py external_data/smiles_datasets/ZINC_neutral_dict.json external_data/smiles_datasets/ZINC.csv 32
+    # python scripts/convert_json_to_csv.py external_data/smiles_datasets/Evo10_neutral_dict.json external_data/smiles_datasets/Evo10.csv 32
+    # python scripts/convert_json_to_csv.py external_data/smiles_datasets/ChEMBL_neutral_dict.json external_data/smiles_datasets/ChEMBL.csv 32
+    # python scripts/convert_json_to_csv.py external_data/smiles_datasets/GDBChEMBL_neutral_dict.json external_data/smiles_datasets/GDBChEMBL.csv 32
+    # python scripts/convert_json_to_csv.py external_data/smiles_datasets/ZINC_neutral_dict.json external_data/smiles_datasets/ZINC.csv 32
 
     typer.run(convert_dataset)
 

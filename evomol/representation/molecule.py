@@ -192,5 +192,4 @@ class Molecule:
         )
 
     def __hash__(self) -> int:
-        # TODO to correct, MolecularGraph may not always be the first representation
-        return hash(self.representations[0].canonical_smiles)
+        return hash(str(self))

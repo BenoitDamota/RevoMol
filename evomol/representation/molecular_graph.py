@@ -4,14 +4,8 @@ Molecular graph representation of a molecule with RDKit.
 
 from __future__ import annotations
 
-import io
-import os
-
 import networkx as nx
-from PIL import Image
 from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem.rdDepictor import Compute2DCoords
 from typing_extensions import override
 
 from evomol.representation.molecule import MoleculeRepresentation
@@ -289,68 +283,6 @@ class MolecularGraph(MoleculeRepresentation):
             if total_valence in (2, 4):
                 valence += 2
         return valence
-
-    def draw(
-        self,
-        at_idx: bool = False,
-        show: bool = True,
-        size: int = 200,
-        write_to_path: str = "",
-    ) -> None:
-        """
-        Drawing the molecule
-        """
-
-        mol = self.mol.GetMol()
-        atoms = mol.GetNumAtoms()
-
-        # Setting the ids as a property if requested
-        if at_idx:
-            for idx in range(atoms):
-                mol.GetAtomWithIdx(idx).SetProp(
-                    "molAtomMapNumber", str(mol.GetAtomWithIdx(idx).GetIdx())
-                )
-
-        # Computing coordinates and making sure the properties are computed
-        Compute2DCoords(mol)
-        mol.UpdatePropertyCache()
-
-        # Drawing the molecule
-        dr = Draw.rdMolDraw2D.MolDraw2DCairo(size, size)
-        opts = dr.drawOptions()
-
-        # Transparent background if not writing to file
-        if not write_to_path:
-            opts.clearBackground = False
-
-        dr.DrawMolecule(mol)
-        dr.FinishDrawing()
-
-        # Loading the molecule as a PIL object
-        bytes_images = dr.GetDrawingText()
-        image = Image.open(io.BytesIO(bytes_images))
-
-        if show:
-            image.show()
-
-        if write_to_path:
-            # Creating directories if they don't exist
-            os.makedirs(os.path.dirname(write_to_path), exist_ok=True)
-
-            # Writing image to disk
-            image.save(write_to_path, "PNG")
-
-        # d = Draw.rdMolDraw2D.MolDraw2DCairo(250, 200)  # or MolDraw2DSVG to get SVGs
-        d = Draw.rdMolDraw2D.MolDraw2DCairo(1000, 1000)  # or MolDraw2DSVG to get SVGs
-        # mol.GetAtomWithIdx(2).SetProp("atomNote", "foo")
-        # mol.GetBondWithIdx(0).SetProp("bondNote", "bar")
-        d.drawOptions().addStereoAnnotation = True
-        d.drawOptions().addAtomIndices = True
-        d.DrawMolecule(mol)
-        d.FinishDrawing()
-        d.WriteDrawingText(f"{self.canonical_smiles}.png")
-
-        # return image
 
     ############################################################
     #                         ACTIONS                          #

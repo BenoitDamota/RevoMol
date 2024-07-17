@@ -17,13 +17,19 @@ for the other datasets, they are under csv format with the following columns:
 - nb_unknown_ecfp_chembl_zinc: number of unknown ECFP4 from the chembl_zinc database
 """
 
+import sys
+import os
+
 import pandas as pd
+
+
+# Add the parent directory to the path to import the module evomol
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from evomol.representation import SMILES, MolecularGraph, Molecule
 
 
-def compare_our_data():
-    nb_heavy_atoms = 5
+def compare_our_data(nb_heavy_atoms: int):
     eval_name = "chembl"  # "chembl_zinc"
     # own_data contains for each dataset, for each nb_heavy_atoms, the list of valid molecules
     own_data = {}
@@ -38,7 +44,7 @@ def compare_our_data():
 
     for eval_name in ["chembl", "chembl_zinc"]:
         for nb_heavy_atom in range(1, nb_heavy_atoms + 1):
-            file = f"output/enumeration_from_C_{eval_name}_{nb_heavy_atom}.txt"
+            file = f"output/enumeration_from_C_{eval_name}_max_atom_{nb_heavy_atom}_depth_2.txt"
             with open(file) as f:
                 for line in f.readlines():
                     s = line.strip().split()[0]
@@ -53,6 +59,22 @@ def compare_our_data():
             # for eval_name in ["chembl", "chembl_zinc"]:
             print(
                 f"{nb_atoms},{nb_heavy_atom},{len(own_data['chembl'][nb_heavy_atom][nb_atoms])},{len(own_data['chembl_zinc'][nb_heavy_atom][nb_atoms])}"
+            )
+
+    for nb_atoms in range(1, nb_heavy_atoms + 1):
+        for nb_heavy_atom in range(nb_atoms, nb_heavy_atoms + 1):
+            # diff between nb_atoms and nb_atoms - 1
+            if not own_data["chembl"][nb_heavy_atom - 1][nb_atoms]:
+                continue
+            print(
+                f"chembl {nb_heavy_atom} {nb_atoms} - {nb_heavy_atom- 1} {nb_atoms} :",
+                set(own_data["chembl"][nb_heavy_atom][nb_atoms])
+                - set(own_data["chembl"][nb_heavy_atom - 1][nb_atoms]),
+            )
+            print(
+                f"chembl_zinc {nb_heavy_atom} {nb_atoms} - {nb_heavy_atom- 1} {nb_atoms} :",
+                set(own_data["chembl_zinc"][nb_heavy_atom][nb_atoms])
+                - set(own_data["chembl_zinc"][nb_heavy_atom - 1][nb_atoms]),
             )
 
 
@@ -78,6 +100,12 @@ def differences_filters(dataset: str):
 
 
 def differences_smiles(dataset_name: str, max_heavy_atoms: int, filter_name: str):
+
+    print(
+        "filter,nb_max_atoms,dataset_name,size_dataset,size_enumeration"
+        ",size_intersection,size_diff_dataset,size_diff_enumeration"
+    )
+
     file = f"external_data/smiles_datasets/{dataset_name}.csv"
     dataset = pd.read_csv(file)
     dataset = dataset[dataset["nb_atoms"] <= max_heavy_atoms]
@@ -123,16 +151,17 @@ if __name__ == "__main__":
     database = "GDBChEMBL"
     database = "ZINC"
     database = "Evo10"
-    datasets = ["Evo10", "ChEMBL", "GDBChEMBL", "ZINC"]
+    datasets = [
+        "Evo10",
+        "ChEMBL",
+        "GDBChEMBL",
+        "ZINC",
+    ]
 
-    max_nb_atoms = 7
+    max_nb_atoms = 8
 
-    print(
-        "filter,nb_max_atoms,dataset_name,size_dataset,size_enumeration"
-        ",size_intersection,size_diff_dataset,size_diff_enumeration"
-    )
-    # compare_our_data()
-    for database in datasets:
-        # differences_filters(database)
-        differences_smiles(database, max_nb_atoms, "chembl")
-        # differences_smiles(database, max_nb_atoms, "chembl_zinc")
+    compare_our_data(max_nb_atoms)
+    # for database in datasets:
+    #     differences_filters(database)
+    # differences_smiles(database, max_nb_atoms, "chembl")
+    # differences_smiles(database, max_nb_atoms, "chembl_zinc")

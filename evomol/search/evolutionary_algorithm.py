@@ -119,7 +119,7 @@ class EvolutionaryAlgorithm:
                 found_improver: bool = False
 
                 while current_selected < len(order_selection) and not found_improver:
-                    index_selected: int = order_selection[current_selected]
+                    index_selected = order_selection[current_selected]
 
                     current_molecule: Molecule = self.population[index_selected]
                     nb_possible_actions: int = current_molecule.nb_remaining_actions()
@@ -128,7 +128,7 @@ class EvolutionaryAlgorithm:
                         current_selected += 1
                         continue
 
-                    new_molecule: Molecule = self.neighborhood_strategy.mutate(
+                    new_molecule: Molecule | None = self.neighborhood_strategy.mutate(
                         self.population[index_selected],
                         molecule_to_replace,
                         evaluations=self.evaluations,

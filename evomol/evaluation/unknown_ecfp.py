@@ -3,6 +3,19 @@ List Morgan fingerprints that are not in the reference database.
 ECFP4 are equivalent to Morgan fingerprints with radius 2.
 Filter out molecules that contain unknown Morgan fingerprints.
 
+
+Currently using version rdkit==2023.9.6 to avoid :
+DEPRECATION WARNING: please use MorganGenerator
+with the code :
+
+fingerprints = Chem.AllChem.GetMorganFingerprint(
+    mol, radius=self.radius
+).GetNonzeroElements()
+
+Look at the following link for more information :
+https://greglandrum.github.io/rdkit-blog/posts/2023-01-18-fingerprint-generator-tutorial.html
+
+
 Inspired on the work of Patrick Walters :
 https://github.com/PatWalters/silly_walks
 
