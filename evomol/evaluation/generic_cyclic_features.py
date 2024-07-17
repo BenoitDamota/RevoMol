@@ -7,51 +7,12 @@ Adapted from https://github.com/BenoitDamota/gcf
 
 import os
 
-# from typing import Optional
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from typing_extensions import override
 
 from evomol.evaluation.evaluation import Evaluation, EvaluationError
 from evomol.representation import MolecularGraph, Molecule
-
-# def try_convert_to_carbon(smiles: str) -> Optional[str]:
-#     """Try to convert the atoms in the molecule to carbon atoms.
-#     Should not work if the molecule contains P or S atoms with valence > 4.
-
-#     I tried this method against the function convert_to_carbon
-#     (without the call to this function) on 680 000 molecules.
-#     This function took 404 seconds to run while the other function took 437
-#     seconds to run.
-#     I think the difference is not significant enough to justify the use of this
-#     function that can bring errors on the output without a lot of control.
-
-#     Args:
-#         smiles (str): SMILES representation of the molecule
-
-#     Returns:
-#         Optional[str]: SMILES representation of the molecule with all atoms
-#             converted to carbon atoms or None if it fails
-#     """
-#     try:
-#         gscaf = MurckoScaffold.MakeScaffoldGeneric(
-#             MurckoScaffold.GetScaffoldForMol(Chem.MolFromSmiles(smiles))
-#         )
-
-#         smiles_scaffolds: str = Chem.MolToSmiles(gscaf)
-#         return smiles_scaffolds
-#     except Exception:  # pylint: disable=broad-exception-caught
-#         # if the molecule contains atoms with valence > 4, the conversion
-#         # to carbon atoms will fail (as the limit is 4)
-#         # in this case, rdkit will print a warning to stderr in the format:
-#         # [hh:mm:ss] Explicit valence for atom # x C, n, is greater than permitted
-#         # You can test the error with the SMILES "C1=C2C3=C[SH]134NN24"
-
-#         # it could be possible to remove the warning by redirecting stderr
-#         # see gcf_proposition_to_remove_error.py for an example
-#         # but I'm not sure it's worth it as the gain in speed is not significant
-#         # and I'm not sure about the side effects of redirecting stderr
-#         return None
 
 
 def convert_to_carbon(smiles: str) -> str:
@@ -74,12 +35,6 @@ def convert_to_carbon(smiles: str) -> str:
         str: SMILES representation of the molecule with all atoms converted to
             carbon atoms
     """
-
-    # See try_convert_to_carbon for the reason why this is commented
-    # smiles_scaffolds = try_convert_to_carbon(smiles)
-    # if smiles_scaffolds is not None:
-    #     return smiles_scaffolds
-
     smiles_scaffolds = MurckoScaffold.MurckoScaffoldSmiles(
         mol=Chem.MolFromSmiles(smiles), includeChirality=False
     )
