@@ -28,13 +28,14 @@ print(properties.PSA)
 print(properties.ROTB)
 """
 
-from rdkit import Chem
+from rdkit.Chem import MolFromSmiles
+from rdkit.Chem.QED import qed
 
 from evomol.evaluation.evaluation import Function
 from evomol.representation import MolecularGraph, Molecule
 
 
-def qed(molecule: Molecule) -> float:
+def qed_score(molecule: Molecule) -> float:
     """Calculate the quantitative estimate of drug-likeness (QED) score of a molecule.
 
     Args:
@@ -46,9 +47,9 @@ def qed(molecule: Molecule) -> float:
     mol_graph = molecule.get_representation(MolecularGraph)
 
     # QED is a score between 0 and 1
-    qed_score: float = Chem.QED.qed(Chem.MolFromSmiles(mol_graph.canonical_smiles))
+    qed_score_: float = qed(MolFromSmiles(mol_graph.canonical_smiles))
 
-    return qed_score
+    return qed_score_
 
 
-QED = Function("QED", qed)
+QED = Function("QED", qed_score)

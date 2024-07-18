@@ -1,6 +1,5 @@
-import sys
 import os
-
+import sys
 
 # Add the parent directory to the path to import the module evomol
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -8,7 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from evomol import evaluation as evaluator
 from evomol.representation import SMILES, MolecularGraph, Molecule
-
 
 Molecule.id_representation_class = SMILES
 Molecule.representations_class = [MolecularGraph]

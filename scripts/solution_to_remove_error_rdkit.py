@@ -9,13 +9,13 @@ warning to stderr in the format:
 You can test the error with the SMILES "C1=C2C3=C[SH]134NN24"
 """
 
-import os
-import sys
 import ctypes
 import io
-from typing import Optional
+import os
+import sys
 import tempfile
 from contextlib import contextmanager
+from typing import Optional
 
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold

@@ -36,10 +36,18 @@ class Action(ABC):
     def __init__(self, molecule: molecule_module.Molecule) -> None:
         self.molecule: molecule_module.Molecule = molecule
 
-    def apply(self) -> molecule_module.Molecule:
-        """Apply the action to the molecule."""
-        # remove the action from the molecule possible actions
-        self.molecule.add_applied_action(self)
+    def apply(self, register_action: bool = False) -> molecule_module.Molecule:
+        """Apply the action to the molecule.
+
+        Args:
+            register_action (bool): Save in the molecule the action applied.
+
+        Returns:
+            molecule_module.Molecule: The new molecule after the action.
+        """
+        if register_action:
+            # remove the action from the molecule possible actions
+            self.molecule.add_applied_action(self)
         return self._apply()
 
     @abstractmethod

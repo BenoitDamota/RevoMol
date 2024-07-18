@@ -2,7 +2,7 @@
 Move a group of atoms in a molecular graph.
 """
 
-import rdkit
+from rdkit.Chem import rdmolops
 from typing_extensions import override
 
 from evomol.action import Action
@@ -94,9 +94,7 @@ class MoveGroupMG(ActionMolGraph):
         # to determine the connected components for each bridge bond
         # an atom is in the same component as the atom it is closest to
         # in the bridge bond
-        distances: list[list[int]] = rdkit.Chem.rdmolops.GetDistanceMatrix(
-            mol_graph.mol
-        )
+        distances: list[list[int]] = rdmolops.GetDistanceMatrix(mol_graph.mol)
 
         implicit_valences = mol_graph.implicit_valences
 

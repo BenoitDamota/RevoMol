@@ -5,11 +5,8 @@ should explore the implementation in GuacaMol
 """
 
 from guacamol.common_scoring_functions import TanimotoScoringFunction
-
-from rdkit import Chem
-from rdkit import DataStructs
+from rdkit import Chem, DataStructs
 from rdkit.Chem.Fingerprints import FingerprintMols
-
 
 target_smiles = "CCO"
 
@@ -37,5 +34,6 @@ for smiles in ["NNNNNN", "CCOCC", "CCO"]:
     score_guaca = scorer.score(canonical)
 
     print(
-        f"Score for {smiles:10}: {score_data:.2f} (data) vs {score_data_morgan:.2f} (morgan) vs {score_guaca:.2f} (guacamol)"
+        f"Score for {smiles:10}: {score_data:.2f} (data) vs "
+        f"{score_data_morgan:.2f} (morgan) vs {score_guaca:.2f} (guacamol)"
     )

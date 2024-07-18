@@ -5,22 +5,39 @@ with list_up_to_depth_from_smiles or by exploring the complete neighborhood of
 a molecule and the neighborhood of its neighbors and so on with 
 enumerate_from_smiles.
 
-Those functions could be optimized.
+Those functions may be be optimized.
 
 find_neighbors could take the set of valid neighbors already found and only
 consider the neighbors that are not in this set, I tried it but it was slower
 and didn't lead to the same results. Maybe I did something wrong.
 
-enumerate_from_smiles could be optimized by using multiprocessing to explore
+enumerate_from_smiles_parallel is optimized by using multiprocessing to explore
 the neighbors of the molecules in parallel.
-Two pools of workers could be used, one to explore the neighbors of the molecules
-and the other to check the validity of the molecules.
-It tried to implement it but I had some issues with the Molecule class it seems
-that it didn't keep the default values of the class attributes. I didn't have
-time to investigate further.
+I tried to use multiprocessing to check the validity of the molecules but it was
+slower :
+    to_check: set[str] = set()
+    for result in neighbors_results:
+        for new_smi in result:
+            # if the SMILES is already in the set of valid or invalid SMILES
+            # it has already been explored or is in the queue to be explored
+            if new_smi in found_valid or new_smi in found_invalid:
+                continue
+
+            to_check.add(new_smi)
+
+    validity_results = pool.starmap(
+        parallel_is_valid_molecule, [(smi, evaluations) for smi in to_check]
+    )
+    for new_smi, is_valid in validity_results:
+        if is_valid:
+            to_explore.add(new_smi)
+            found_valid.add(new_smi)
+        else:
+            found_invalid.add(new_smi)
 """
 
 import time
+from multiprocessing import Pool, cpu_count
 
 from evomol import evaluation as evaluator
 from evomol.action import molecular_graph as mg
@@ -28,8 +45,8 @@ from evomol.evaluation import is_valid_molecule
 from evomol.representation import SMILES, MolecularGraph, Molecule
 
 
-def list_and_compute_neighbors(molecule: Molecule) -> set[Molecule]:
-    """List the neighbors of a molecule and compute them
+def set_of_neighbors(molecule: Molecule) -> set[Molecule]:
+    """List the neighbors of a molecule and compute them.
 
     Args:
         molecule (Molecule): Molecule to explore
@@ -49,7 +66,50 @@ def list_and_compute_neighbors(molecule: Molecule) -> set[Molecule]:
     }
 
 
-def find_neighbors(molecule: Molecule, max_depth: int) -> set[Molecule]:
+def list_of_neighbors(molecule: Molecule) -> list[Molecule]:
+    """List the neighbors of a molecule and compute them.
+
+    Args:
+        molecule (Molecule): Molecule to explore
+
+    Returns:
+        list[Molecule]: list of molecules found
+    """
+    # fill the possible actions of the molecule
+    molecule.compute_possible_actions()
+    # for each representation, for each action list, for each action, apply it
+    # and return the list of new molecules
+    return [
+        action.apply()
+        for representation in molecule.possible_actions.values()
+        for action_list in representation.values()
+        for action in action_list
+    ]
+
+
+def dict_of_neighbors(molecule: Molecule) -> dict[str, dict[str, list[Molecule]]]:
+    """List the neighbors of a molecule and compute them.
+
+    Args:
+        molecule (Molecule): Molecule to explore
+
+    Returns:
+        dict[str, list[Molecule]]: dict of molecules found
+    """
+    # fill the possible actions of the molecule
+    molecule.compute_possible_actions()
+    # for each representation, for each action list, for each action, apply it
+    # and return the dict of new molecules
+    return {
+        representation_name: {
+            action_name: [action.apply() for action in action_list]
+            for action_name, action_list in action_dict.items()
+        }
+        for representation_name, action_dict in molecule.possible_actions.items()
+    }
+
+
+def find_neighbors(molecule: Molecule, max_depth: int) -> set[str]:
     """Iteratively find the neighbors of a molecule up to a certain depth.
     Explore all neighbors at level 1 then all neighbors at level 2 and so on.
 
@@ -58,10 +118,10 @@ def find_neighbors(molecule: Molecule, max_depth: int) -> set[Molecule]:
         max_depth (int): Maximum depth to explore
 
     Returns:
-        set[Molecule]: set of molecules found
+        set[str]: set of molecules found
     """
     # set of neighbors found
-    neighbors: set[Molecule] = set()
+    neighbors: set[str] = set()
 
     # queue of molecules to explore
     queue = {molecule}
@@ -75,13 +135,14 @@ def find_neighbors(molecule: Molecule, max_depth: int) -> set[Molecule]:
         next_queue = set()
         # for each molecule in the queue, find the neighbors
         for current_mol in queue:
-            for new_mol in list_and_compute_neighbors(current_mol):
+            for new_mol in set_of_neighbors(current_mol):
+                new_smi = str(new_mol)
                 # add the new molecule to the set of neighbors if it is not
                 # already in it, don't add it if it is already in the set
                 # as it has already been explored
-                if new_mol not in neighbors:
+                if new_smi not in neighbors:
                     next_queue.add(new_mol)
-                    neighbors.add(new_mol)
+                    neighbors.add(new_smi)
         # update the queue with the new neighbors and increase the depth
         queue = next_queue
         depth += 1
@@ -110,7 +171,7 @@ def find_neighbors_and_check_validity_each_step(
     while depth <= max_depth:
         next_queue: set[Molecule] = set()
         for current_mol in queue:
-            for new_mol in list_and_compute_neighbors(current_mol):
+            for new_mol in set_of_neighbors(current_mol):
                 if new_mol not in neighbors and is_valid_molecule(new_mol, evaluations):
                     next_queue.add(new_mol)
                     neighbors.add(new_mol)
@@ -149,22 +210,28 @@ def enumerate_from_smiles(
         found_invalid.add(starting_smiles)
 
     while to_explore:
-        # get the next SMILES to explore
-        current_smiles: str = to_explore.pop()
 
-        # find the neighbors of the current SMILES
-        new_mols = find_neighbors(Molecule(current_smiles), depth)
+        to_check: set[str] = set()
 
-        for new_mol in new_mols:
-            # get the SMILES of the new molecule
-            new_smi = str(new_mol)
+        while to_explore:
+            # get the next SMILES to explore
+            current_smiles: str = to_explore.pop()
+
+            # find the neighbors of the current SMILES
+            new_mols = find_neighbors(Molecule(current_smiles), depth)
+
+            to_check.update(new_mols)
+
+        while to_check:
+            new_smi = to_check.pop()
+
             # if the SMILES is already in the set of valid or invalid SMILES
             # it has already been explored or is in the queue to be explored
             if new_smi in found_valid or new_smi in found_invalid:
                 continue
 
             # check if the new molecule is valid
-            if is_valid_molecule(new_mol, evaluations):
+            if is_valid_molecule(Molecule(new_smi), evaluations):
                 # if it is valid, add it to the set of valid SMILES and to the
                 # set of SMILES to explore
                 to_explore.add(new_smi)
@@ -173,6 +240,101 @@ def enumerate_from_smiles(
                 # if it is invalid, add it to the set of invalid SMILES
                 # to avoid checking it again
                 found_invalid.add(new_smi)
+
+    return found_valid, found_invalid
+
+
+def parallel_find_neighbors(smiles: str, depth: int) -> set[str]:
+    """Find the neighbors of a molecule up to a certain depth for parallel use.
+
+    Args:
+        smiles (str): SMILES to explore
+        depth (int): Maximum depth to explore
+
+    Returns:
+        set[str]: set of molecules found
+    """
+    return find_neighbors(Molecule(smiles), depth)
+
+
+def parallel_is_valid_molecule(
+    smiles: str, evaluations: list[evaluator.Evaluation]
+) -> tuple[str, bool]:
+    """Check if a molecule is valid according to a list of evaluations for
+    parallel use.
+
+    Args:
+        smiles (str): SMILES to check
+        evaluations (list[evaluator.Evaluation]): filter to apply
+
+    Returns:
+        tuple[str, bool]: _description_
+    """
+    return smiles, is_valid_molecule(Molecule(smiles), evaluations)
+
+
+def enumerate_from_smiles_parallel(
+    starting_smiles: str,
+    depth: int,
+    evaluations: list[evaluator.Evaluation],
+    nb_cpu: int,
+) -> tuple[set[str], set[str]]:
+    """Enumerate all reachable molecules starting from a SMILES up to a certain
+    depth and check their validity before exploring them in parallel.
+
+    Args:
+        starting_smiles (str): SMILES to explore
+        depth (int): Maximum depth to explore
+        evaluations (list[evaluator.Evaluation]): filter to apply
+        nb_cpu (int): number of CPU to use
+
+    Returns:
+        tuple[set[str], set[str]]: sets of valid and invalid SMILES
+    """
+
+    # set of SMILES to explore
+    to_explore: set[str] = {starting_smiles}
+
+    # set of valid and invalid SMILES found
+    found_valid: set[str] = set()
+    found_invalid: set[str] = set()
+
+    # add the starting SMILES to the set of valid or invalid SMILES
+    if is_valid_molecule(Molecule(starting_smiles), evaluations):
+        found_valid.add(starting_smiles)
+    else:
+        found_invalid.add(starting_smiles)
+
+    if nb_cpu == 0:
+        nb_cpu = cpu_count()
+
+    with Pool(nb_cpu) as pool:
+        while to_explore:
+
+            # Paralléliser la recherche des voisins
+            neighbors_results = pool.starmap(
+                parallel_find_neighbors,
+                [(smiles, depth) for smiles in to_explore],
+            )
+            to_explore.clear()
+
+            for result in neighbors_results:
+                for new_smi in result:
+                    # if the SMILES is already in the set of valid or invalid SMILES
+                    # it has already been explored or is in the queue to be explored
+                    if new_smi in found_valid or new_smi in found_invalid:
+                        continue
+
+                    # check if the new molecule is valid
+                    if is_valid_molecule(Molecule(new_smi), evaluations):
+                        # if it is valid, add it to the set of valid SMILES and to the
+                        # set of SMILES to explore
+                        to_explore.add(new_smi)
+                        found_valid.add(new_smi)
+                    else:
+                        # if it is invalid, add it to the set of invalid SMILES
+                        # to avoid checking it again
+                        found_invalid.add(new_smi)
 
     return found_valid, found_invalid
 
@@ -236,7 +398,11 @@ def setup_default_enumeration_parameters(nb_heavy_atoms: int) -> None:
 
 
 def setup_and_launch_enumeration(
-    start_smiles: str, eval_name: str, nb_heavy_atoms: int, depth: int
+    start_smiles: str,
+    eval_name: str,
+    nb_heavy_atoms: int,
+    depth: int,
+    nb_cpu: int,
 ) -> None:
     """Setup the default parameters and launch the enumeration from a SMILES.
     All valid molecules found are saved in a file in the output/ directory,
@@ -251,6 +417,7 @@ def setup_and_launch_enumeration(
         eval_name (str): chembl or chembl_zinc as filter
         nb_heavy_atoms (int): maximum number of heavy atoms
         depth (int): maximum depth to explore
+        nb_cpu (int): number of CPU to use. 0 to use all CPUs.
     """
 
     # init the default parameters and evaluations
@@ -266,7 +433,10 @@ def setup_and_launch_enumeration(
     can_smi = Molecule(start_smiles).get_representation(MolecularGraph).canonical_smiles
 
     # explore the neighbors of the starting SMILES
-    found_valid, found_invalid = enumerate_from_smiles(can_smi, depth, evaluations)
+    found_valid, found_invalid = enumerate_from_smiles_parallel(
+        can_smi, depth, evaluations, nb_cpu
+    )
+    # found_valid, found_invalid = enumerate_from_smiles(can_smi, depth, evaluations)
 
     duration = time.time() - start_time
 
@@ -283,10 +453,12 @@ def setup_and_launch_enumeration(
     )
     with open(file_path, "w", encoding="utf8") as file:
         for mol in found_valid:
-            if str(mol):
-                file.write(f"{mol}\n")
-            else:
-                file.write('""\n')
+            str_mol: str = str(Molecule(mol))
+            if str_mol:
+                file.write(f"{str_mol}\n")
+            # don't write the empty molecule
+            # else:
+            #     file.write('""\n')
 
 
 def list_up_to_depth_from_smiles(
@@ -315,9 +487,9 @@ def list_up_to_depth_from_smiles(
 
     # print the valid neighbors
     print("Neighbors:")
-    for mol in neighbors:
-        if is_valid_molecule(mol, evaluations):
-            print("\t", mol)
+    for smi in neighbors:
+        if is_valid_molecule(Molecule(smi), evaluations):
+            print("\t", smi)
 
 
 def find_closest_neighbors(
@@ -351,21 +523,20 @@ def find_closest_neighbors(
 
         time_start = time.time()
 
-        mols: set[Molecule] = find_neighbors(Molecule(can_smi_start), depth)
+        smiles_set: set[str] = find_neighbors(Molecule(can_smi_start), depth)
 
-        for mol in mols:
-            can_smi = str(mol)
-            if can_smi == can_smi_start:
+        for smi in smiles_set:
+            if smi == can_smi_start:
                 continue
-            if can_smi in valid_mols:
+            if smi in valid_mols:
                 continue
-            if is_valid_molecule(mol, evaluations):
-                valid_mols.add(str(mol))
+            if is_valid_molecule(Molecule(smi), evaluations):
+                valid_mols.add(smi)
 
         duration = time.time() - time_start
 
         print(
-            f"\t {len(valid_mols)}/{len(mols)} valid molecules at "
+            f"\t {len(valid_mols)}/{len(smiles_set)} valid molecules at "
             f"depth {depth} "
             f"in {duration:.2f}s"
         )

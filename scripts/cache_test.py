@@ -5,7 +5,8 @@ The objective is to use the cache to store results of evaluations for a molecule
 instead of recomputing them each time.
 
 To avoid keeping in memory the object Molecule, we have to ignore it in the cache.
-Look at the documentation to ignore the object Molecule but keep in mind the SMILES string of the molecule.
+Look at the documentation to ignore the object Molecule but keep in mind the 
+SMILES string of the molecule.
 https://joblib.readthedocs.io/en/latest/memory.html#ignoring-some-arguments
 
 
@@ -13,6 +14,7 @@ https://joblib.readthedocs.io/en/latest/memory.html#ignoring-some-arguments
 
 import time
 from functools import cache, wraps
+
 from joblib import Memory
 
 

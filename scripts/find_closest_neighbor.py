@@ -16,8 +16,8 @@ DD
 python find_closest_neighbor.py "N1=S=NC2=C1N=S=N2" chembl 10
 """
 
-import sys
 import os
+import sys
 
 import typer
 

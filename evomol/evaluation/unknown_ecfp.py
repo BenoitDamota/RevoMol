@@ -12,7 +12,8 @@ fingerprints = Chem.AllChem.GetMorganFingerprint(
     mol, radius=self.radius
 ).GetNonzeroElements()
 
-Look at the following link for more information :
+Look at the following links for more information :
+http://www.rdkit.org/new_docs/GettingStartedInPython.html#morgan-fingerprints-circular-fingerprints
 https://greglandrum.github.io/rdkit-blog/posts/2023-01-18-fingerprint-generator-tutorial.html
 
 
