@@ -167,12 +167,37 @@ class Molecule:
         raise ValueError(f"No representation found for {representation_class}")
 
     def value(self, name: str) -> Any:
-        """Return the value of the molecule."""
-        return self._values.get(name, None)
+        """Return the value of the molecule.
+        Use this method to get the value of the molecule and not the values() method.
+
+        Args:
+            name (str): Name of the value to return.
+
+        Returns:
+            Any: Value of the molecule.
+
+        Raises:
+            KeyError: Error if the value does not exist.
+        """
+        try:
+            return self._values[name]
+        except KeyError as e:
+            raise KeyError(
+                f"Value {name} not found in molecule. "
+                f"Available: {self._values.keys()}"
+            ) from e
 
     def set_value(self, name: str, value: object) -> None:
         """Set the value of the molecule."""
         self._values[name] = value
+
+    @property
+    def values(self) -> dict[str, object]:
+        """Return all values of the molecule.
+        Do not use this method to get a value of the molecule for the evaluation.
+        Prefer the value(name) method.
+        """
+        return self._values
 
     @classmethod
     def list_representation_classes(cls) -> list[type[MoleculeRepresentation]]:

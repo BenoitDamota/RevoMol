@@ -6,24 +6,18 @@ import pytest
 
 from evomol.action import Action
 from evomol.action import molecular_graph as mg
-from evomol.representation import MolecularGraph, Molecule
-from evomol.representation.smiles import SMILES
+from evomol.representation import Molecule
+from evomol import default_parameters as dp
 
 
 @pytest.fixture(autouse=True, scope="module")
 def setup_parameters() -> None:
     """set the parameters for the tests."""
-    Molecule.id_representation_class = SMILES
-    Molecule.representations_class = [MolecularGraph]
-    Molecule.max_heavy_atoms = 38
-    Molecule.accepted_atoms = ["C", "O", "N", "F"]
-    mg.AddGroupMG.groups = [
-        mg.add_group.Group("C1=CC=CS1", 5, [0]),
-        mg.add_group.Group("C1=CC=CC=C1", 6, [0]),
-        mg.add_group.Group("[N+](=O)[O-]", 3, [0]),
-        mg.add_group.Group("N=[N+]=[N-]", 3, [0]),
-        mg.add_group.Group("S(=O)(=O)O", 4, [0]),
-    ]
+    dp.setup_default_parameters(
+        accepted_atoms=["C", "O", "N", "F"],
+        max_heavy_atoms=38,
+    )
+    dp.setup_default_action_space()
 
 
 def check_actions_smiles(

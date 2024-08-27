@@ -1,5 +1,5 @@
 """
-Evaluation of the number of unknown generic cyclic features in a molecule
+Evaluation of the number of unknown generic cyclic features (GCF) in a molecule
 compared to a reference dataset of generic cyclic features.
 
 Adapted from https://github.com/BenoitDamota/gcf
@@ -109,7 +109,7 @@ class UnknownGCF(Evaluation):
                 Use "chembl_zinc" for gcf2.txt.
         """
 
-        super().__init__(f"GenericCyclicFeatures_{name}")
+        super().__init__(f"UnknownGCF_{name}")
 
         with open(path_db, encoding="utf8") as f:
             self.smiles_list: frozenset[str] = frozenset(
@@ -135,19 +135,23 @@ class FilterUnknownGCF(Evaluation):
 
     def __init__(self, threshold: int = 0, name: str = "chembl"):
         super().__init__("FilterUnknownGCF")
-        self.eval_name: str = f"GenericCyclicFeatures_{name}"
+        self.eval_name: str = f"UnknownGCF_{name}"
         self.threshold = threshold
 
     @override
     def _evaluate(self, molecule: Molecule) -> bool:
-        value = molecule.value(self.eval_name)
-        if value is None:
-            raise RuntimeError(
+        try:
+            value = molecule.value(self.eval_name)
+        except KeyError as e:
+            raise KeyError(
                 "The molecule does not have a GenericCyclicFeatures value."
-            )
-        if value > self.threshold:
-            raise EvaluationError(
-                "The molecule contains more unknown GCF than allowed "
-                f"({self.threshold})."
-            )
-        return True
+                "Make sure to evaluate it first with the UnknownGCF evaluation."
+            ) from e
+
+        if value <= self.threshold:
+            return True
+
+        raise EvaluationError(
+            "The molecule contains more unknown GCF than allowed "
+            f"({self.threshold})."
+        )

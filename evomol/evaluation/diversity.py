@@ -165,7 +165,6 @@ def checkmol(molecule: Molecule) -> list[str]:
             mode="w+", suffix=".res", delete=True
         ) as mol_ficout:
             ficout_name = mol_ficout.name
-            # TODO print a line if checkmol not found, should raise an error
             os.system(checkmol_cmd % (fic_name, ficout_name))
             lines = [line.strip() for line in mol_ficout.readlines()]
     if len(lines) == 0 or lines[0] == "unknown query file format!":

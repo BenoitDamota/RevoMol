@@ -78,6 +78,6 @@ NormalizedSAScore = Function("NormalizedSAScore", normalized_sa_score)
 
 
 ZincNormalizedSAScore = Function(
-    "ZincNormalizedSAScore",
+    "zinc_normalized_sa_score",
     zinc_normalized_sa_score,
 )

@@ -3,7 +3,7 @@ List Morgan fingerprints that are not in the reference database.
 ECFP4 are equivalent to Morgan fingerprints with radius 2.
 Filter out molecules that contain unknown Morgan fingerprints.
 
-
+TODO change the way of computing the Morgan fingerprints.
 Currently using version rdkit==2023.9.6 to avoid :
 DEPRECATION WARNING: please use MorganGenerator
 with the code :
@@ -19,8 +19,6 @@ https://greglandrum.github.io/rdkit-blog/posts/2023-01-18-fingerprint-generator-
 
 Inspired on the work of Patrick Walters :
 https://github.com/PatWalters/silly_walks
-
-TODO add the reference to the paper
 """
 
 import os
@@ -101,14 +99,18 @@ class FilterUnknownECFP(Evaluation):
 
     @override
     def _evaluate(self, molecule: Molecule) -> bool:
-        value = molecule.value(self.eval_name)
-        if value is None:
-            raise RuntimeError(
+        try:
+            value = molecule.value(self.eval_name)
+        except KeyError as e:
+            raise KeyError(
                 "The molecule does not have a UnknownECFP value."
-            )  # TODO rendre le message plus clair
-        if value > self.threshold:
-            raise EvaluationError(
-                "The molecule contains more unknown ECFP than allowed "
-                f"({self.threshold})."
-            )
-        return True
+                "Make sure to evaluate it first with the UnknownECFP evaluation."
+            ) from e
+
+        if value <= self.threshold:
+            return True
+
+        raise EvaluationError(
+            "The molecule contains more unknown ECFP than allowed "
+            f"({value} > {self.threshold})."
+        )

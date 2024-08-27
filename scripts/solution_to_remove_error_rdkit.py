@@ -15,7 +15,7 @@ import os
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Generator, Optional
 
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
@@ -26,11 +26,12 @@ c_flush = libc.fflush
 
 
 @contextmanager
-def stderr_redirector(stream):
+def stderr_redirector(stream: io.BytesIO) -> Generator[Any, Any, Any]:
+    """Redirect stderr to a given stream."""
     # The original fd stderr points to.
     original_stderr_fd = sys.stderr.fileno()
 
-    def _redirect_stderr(to_fd):
+    def _redirect_stderr(to_fd: int) -> None:
         """Redirect stderr to the given file descriptor."""
         # Flush the C-level buffer stderr
         c_flush(c_stderr)
@@ -78,7 +79,7 @@ def try_convert_to_carbon(smiles: str) -> Optional[str]:
             )
             smiles_scaffolds: str = Chem.MolToSmiles(gscaf)
             return smiles_scaffolds
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             pass
 
     output = f.getvalue().decode("utf-8")

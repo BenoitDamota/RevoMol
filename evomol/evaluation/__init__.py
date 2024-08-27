@@ -24,7 +24,6 @@ from .generic_cyclic_features import (
 )
 
 from .logp import LogP as LogP, ZincNormalizedLogP as ZincNormalizedLogP
-from .nb_perturbations import NPerturbations as NPerturbations
 from .qed import QED as QED
 from .rd_filters import RDFilters as RDFilters
 from .sa_score import (

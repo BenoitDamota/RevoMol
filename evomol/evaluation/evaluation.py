@@ -1,5 +1,20 @@
 """
-This module contains the abstract class Evaluation.
+This module contains the abstract class Evaluation, the class EvaluationError, 
+the class Function, and the function is_valid_molecule.
+
+Evaluation defines the interface for evaluations.
+Evaluations are used to compute properties of molecules.
+They are used to filter molecules and to compute the fitness of a molecule in
+evolutionary algorithms.
+
+The EvaluationError class is an exception that is raised when an evaluation 
+cannot be computed for a molecule.
+
+Function is a subclass of Evaluation that defines an evaluation based on a
+function with a name.
+
+is_valid_molecule is a function that checks if a molecule is valid according to
+a list of evaluations.
 """
 
 from __future__ import annotations
@@ -55,10 +70,15 @@ class Evaluation(ABC):
 
         Returns:
             object: The value of the evaluation.
+
+        Raises:
+            EvaluationError: Error if the evaluation cannot be computed.
         """
-        value: Any = molecule.value(self.name)
-        if value is not None:
+        try:
+            value: Any = molecule.value(self.name)
             return value
+        except KeyError:
+            pass
 
         value = self._evaluate(molecule)
 
@@ -74,11 +94,19 @@ class Evaluation(ABC):
 
         Returns:
             object: The value of the evaluation.
+
+        Raises:
+            EvaluationError: Error if the evaluation cannot be computed.
         """
 
 
 class Function(Evaluation):
-    """Class to define an evaluation based on a function."""
+    """
+    Class to define an evaluation based on a function.
+
+    It requires a name and a function that takes a Molecule as input and returns
+    the value of the evaluation.
+    """
 
     def __init__(self, name: str, function: Callable[[Molecule], Any]) -> None:
         super().__init__(name)

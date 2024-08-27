@@ -25,6 +25,7 @@ class ParametersEvolutionaryAlgorithm:
     selection: str = "random"  # random, best, roulette
 
 
+# pylint: disable=too-many-instance-attributes
 class EvolutionaryAlgorithm:
     """
     Base class for evolutionary algorithms.
@@ -42,12 +43,17 @@ class EvolutionaryAlgorithm:
         self.evaluations: list[Evaluation] = evaluations
         self.neighborhood_strategy: NeighborhoodStrategy = neighborhood_strategy
 
+        self.tabu_molecules: set[str] = set()
+
         if len(self.population) < self.parameters.size:
             self.population = self.population + [
                 Molecule("") for _ in range(self.parameters.size - len(self.population))
             ]
 
             for molecule in self.population:
+                self.tabu_molecules.add(
+                    molecule.get_representation(MolecularGraph).canonical_smiles
+                )
                 for evaluation in evaluations:
                     evaluation.evaluate(molecule)
 
@@ -121,21 +127,20 @@ class EvolutionaryAlgorithm:
                 while current_selected < len(order_selection) and not found_improver:
                     index_selected = order_selection[current_selected]
 
-                    current_molecule: Molecule = self.population[index_selected]
-                    nb_possible_actions: int = current_molecule.nb_remaining_actions()
-
-                    if nb_possible_actions == 0:
-                        current_selected += 1
-                        continue
-
                     new_molecule: Molecule | None = self.neighborhood_strategy.mutate(
                         self.population[index_selected],
                         molecule_to_replace,
                         evaluations=self.evaluations,
+                        tabu_molecules=self.tabu_molecules,
                     )
 
                     if new_molecule is not None:
                         self.population[index_to_replace] = new_molecule
+                        self.tabu_molecules.add(
+                            new_molecule.get_representation(
+                                MolecularGraph
+                            ).canonical_smiles
+                        )
                         found_improver = True
 
                     current_selected += 1

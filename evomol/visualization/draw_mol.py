@@ -25,8 +25,8 @@ from evomol.representation import MolecularGraph, Molecule
 
 def mol_to_svg(
     molecule: Molecule,
-    size=500,
-    draw_index=True,
+    size: int = 500,
+    draw_index: bool = True,
     notes_on_atoms: Optional[dict[int, str]] = None,
     notes_on_bonds: Optional[dict[int, str]] = None,
 ) -> str:
@@ -69,7 +69,7 @@ def mol_to_svg(
     d.FinishDrawing()
 
     # get the SVG image and return it
-    svg = d.GetDrawingText()
+    svg: str = d.GetDrawingText()
     return svg
 
 
@@ -80,7 +80,7 @@ def draw_in_jupyter(svg: str) -> None:
     Args:
         svg (str): SVG image to display.
     """
-    display(SVG(svg))
+    display(SVG(svg))  # type: ignore[no-untyped-call]
 
 
 def draw_in_matplotlib(svg: str, show: bool = True, save_to_path: str = "") -> None:
@@ -112,7 +112,7 @@ def draw_in_matplotlib(svg: str, show: bool = True, save_to_path: str = "") -> N
 
 
 def draw_multiple_svgs_in_matplotlib(
-    svgs: list,
+    svgs: list[str],
     show: bool = True,
     save_to_path: str = "",
 ) -> None:
@@ -141,13 +141,13 @@ def draw_multiple_svgs_in_matplotlib(
     fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 5))
 
     # display each image in a subplot
-    for i, (image, ax) in enumerate(zip(png_datas, axes.flat)):
+    for image, ax in zip(png_datas, axes.flat):  # type: ignore[union-attr]
         ax.imshow(image)
         ax.axis("off")
 
     # remove the axis for the empty subplots
-    for j in range(i + 1, len(axes.flat)):
-        axes.flat[j].axis("off")
+    for j in range(len(png_datas), len(axes.flat)):  # type: ignore[union-attr]
+        axes.flat[j].axis("off")  # type: ignore[union-attr]
 
     plt.tight_layout()
     if show:

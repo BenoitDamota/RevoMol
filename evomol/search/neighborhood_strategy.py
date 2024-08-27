@@ -3,11 +3,15 @@ Module to define the neighborhood strategy for a molecule representation.
 """
 
 import random
+import sys
 from abc import ABC, abstractmethod
 
+from typing_extensions import override
+
+import evomol.action.action as action_module
 from evomol.action import Action, ActionError
-from evomol.evaluation import Evaluation, EvaluationError
-from evomol.representation import Molecule
+from evomol.evaluation import Evaluation, is_valid_molecule
+from evomol.representation import MolecularGraph, Molecule
 from evomol.search.parameters import search_parameters
 
 
@@ -20,8 +24,9 @@ class NeighborhoodStrategy(ABC):
     Strategy to generate neighbors of a molecule representation.
     """
 
-    depth: int = 1
-    nb_max_tries: int = 50
+    def __init__(self, depth: int = 1, nb_max_tries: int = 50):
+        self.depth = depth
+        self.nb_max_tries = nb_max_tries
 
     @abstractmethod
     def mutate(
@@ -29,7 +34,8 @@ class NeighborhoodStrategy(ABC):
         molecule: Molecule,
         to_replace: Molecule,
         evaluations: list[Evaluation],
-    ) -> list[Molecule]:
+        tabu_molecules: set[str],
+    ) -> Molecule | None:
         """Takes a molecule and returns a new molecule with a mutation."""
 
 
@@ -38,42 +44,53 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
     Random strategy to generate neighbors of a molecule representation.
     """
 
+    def __init__(
+        self,
+        depth: int = 1,
+        nb_max_tries: int = 50,
+        preselect_actions: bool = True,
+    ):
+        super().__init__(depth, nb_max_tries)
+        # whether if one action space is selected before or if all actions
+        # space are computed then randomly selected
+        self.preselect_actions: bool = preselect_actions
+
+    @override
     def mutate(
         self,
         molecule: Molecule,
         to_replace: Molecule,
         evaluations: list[Evaluation],
-    ) -> list[Molecule]:
+        tabu_molecules: set[str],
+    ) -> Molecule | None:
 
         nb_attempts: int = 0
-        molecule.compute_possible_actions()
         while nb_attempts < self.nb_max_tries:
-            if molecule.nb_remaining_actions() == 0:
-                break
-
-            valid: bool = True
 
             # apply a random mutation
             try:
                 new_molecule: Molecule = self.random_mutation(molecule)
             except ActionError as e:
-                # print(e)
-                valid = False
-                # TODO ? should be a critical error ?
+                # Is this a critical error? This would mean that the action
+                # is invalid and the code is not working properly.
                 # as only update_representation is supposed to crash
-                raise e
+                print(e, file=sys.stderr)
+                # count as a failed mutation
+                nb_attempts += 1
+                continue
 
-            for evaluation in evaluations:
-                if not valid:
-                    break
-                try:
-                    evaluation.evaluate(new_molecule)
-                except EvaluationError:
-                    # print(e)
-                    valid = False
+            new_smiles: str = new_molecule.get_representation(
+                MolecularGraph
+            ).canonical_smiles
+            # check if the new molecule is in the tabu list
+            if new_smiles in tabu_molecules:
+                nb_attempts += 1
+                continue
+
+            evaluation_ok = is_valid_molecule(new_molecule, evaluations)
 
             # check if the new molecule is better than one of the molecules to replace
-            if valid and (
+            if evaluation_ok and (
                 not to_replace
                 or new_molecule.value(search_parameters.fitness_criteria)
                 > to_replace.value(search_parameters.fitness_criteria)
@@ -95,24 +112,56 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
         """
 
         for _ in range(self.depth):
-            # print(f"Depth: {depth}")
-            # list all possible actions
-            if not new_molecule.possible_actions:
-                new_molecule.compute_possible_actions()
+            action: Action
+            if self.preselect_actions:
+                # select the action space before generating the actions
 
-            # select a random representation
-            representation: list[list[Action]] = random.choice(
-                new_molecule.remaining_actions
-            )
+                representation_dict: dict[str, list[type[action_module.Action]]] = (
+                    new_molecule.list_available_actions_space()
+                )
 
-            # select a random action space
-            action_space: list[Action] = random.choice(representation)
+                # choose a random representation
+                representation_choice: str = random.choice(
+                    list(representation_dict.keys())
+                )
 
-            # select a random action
-            action: Action = random.choice(action_space)
+                # choose a random action
+                action_choice: type[action_module.Action] = random.choice(
+                    representation_dict[representation_choice]
+                )
 
-            # print(f"Applying action: {action}")
+                # list actions
+                actions: list[action_module.Action] = action_choice.list_actions(
+                    new_molecule
+                )
+
+                if not actions:
+                    continue
+
+                # choose a random action
+                action = random.choice(actions)
+
+            else:
+                # generate all possible actions then choose one randomly
+                possible_actions: dict[str, dict[str, list[action_module.Action]]] = (
+                    new_molecule.compute_possible_actions()
+                )
+
+                # if there are no possible actions, return the molecule
+                if not possible_actions:
+                    return new_molecule
+
+                # choose a random representation
+                representation: str = random.choice(list(possible_actions.keys()))
+
+                # choose a random action space
+                action_space: str = random.choice(
+                    list(possible_actions[representation].keys())
+                )
+
+                # choose a random action
+                action = random.choice(possible_actions[representation][action_space])
+
+            # apply the action
             new_molecule = action.apply()
-            # print(f"New molecule: {new_molecule}")
-
         return new_molecule

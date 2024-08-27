@@ -8,6 +8,7 @@ from .add_atom import (
 )
 from .add_group import (
     AddGroupMG as AddGroupMG,
+    Group as Group,
 )
 from .change_bond import (
     ChangeBondMG as ChangeBondMG,

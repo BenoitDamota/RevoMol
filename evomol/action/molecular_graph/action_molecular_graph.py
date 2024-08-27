@@ -33,15 +33,25 @@ class ActionMolGraph(Action):
         Returns:
             Molecule: Molecule after the action.
         """
+        # get the molecular graph representation
         mol_graph: MolecularGraph = self.molecule.get_representation(MolecularGraph)
         assert mol_graph is not None
+        # make a copy of the molecular graph
         new_mol_graph: MolecularGraph = copy(mol_graph)
 
+        # edit the new molecular graph in place
         self.apply_action(new_mol_graph)
 
+        # update the representation of the molecule
         try:
             new_mol_graph.update_representation()
         except Exception as e:
+            # raise an error if the new molecular graph cannot be converted to
+            # a molecule should not happen
+            # if it does, it is a bug in the code of the actions, either in the
+            # apply_action method or in the list_actions method
+            # it would mean that the molecular graph is not a valid molecule
+            # in terms of valence, etc.
             raise ActionError(self, new_mol_graph.canonical_smiles, repr(e)) from e
 
         return Molecule(new_mol_graph.canonical_smiles)

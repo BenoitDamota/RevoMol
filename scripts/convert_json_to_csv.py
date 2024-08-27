@@ -1,5 +1,8 @@
 """
-Convert json data (Evo10, ChEMBL, GDBChEMBL, ZINC) to csv file
+Convert json data (Evo10, ChEMBL, GDBChEMBL, ZINC) to csv file.
+The maximum number of atoms is 12 and the atoms are limited to C, O, N, F, S.
+Change default_parameters to modify the number of atoms and the atoms allowed 
+in convert_dataset.
 
 Data origin :
 Evo10_neutral_dict.json
@@ -54,23 +57,30 @@ value: dict {
 }
 """
 
+from __future__ import annotations
+
 import json
 import os
 import sys
 from multiprocessing import Manager, Process, Queue
+from multiprocessing.managers import ListProxy
+from typing import Optional
 
 import typer
 
 # Add the parent directory to the path to import the module evomol
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+# pylint: disable=wrong-import-position, import-error
+
+from evomol import default_parameters as dp
 from evomol import evaluation as evaluator
-from evomol.representation import SMILES, MolecularGraph, Molecule
+from evomol.representation import MolecularGraph, Molecule
 
 
-def evaluateMolecule(
-    inputQueue: Queue,
-    results: list,
+def evaluate_molecule(
+    input_queue: Queue[Optional[tuple[str, float, float]]],
+    results: ListProxy[str],
     eval_gcf_chembl: evaluator.UnknownGCF,
     eval_ecfp_chembl: evaluator.UnknownECFP,
     eval_gcf_chembl_zinc: evaluator.UnknownGCF,
@@ -79,26 +89,27 @@ def evaluateMolecule(
     """Evaluate SMILES as long as there are some in the inputQueue
 
     Args:
-        inputQueue (Queue): Contains the SMILES to evaluate
-        results (list): List to store the results
+        inputQueue (Queue[Optional[tuple[str, float, float]]]): Contains the
+            SMILES to evaluate
+        results (ListProxy[str]): List to store the results
         eval_gcf_chembl (evaluator.UnknownGCF): evaluator GCF chembl
         eval_ecfp_chembl (evaluator.UnknownECFP): evaluator ECFP chembl
         eval_gcf_chembl_zinc (evaluator.UnknownGCF): evaluator GCF chembl_zinc
         eval_ecfp_chembl_zinc (evaluator.UnknownECFP): evaluator ECFP chembl_zinc
     """
     while True:
-        item = inputQueue.get()
+        item = input_queue.get()
         if item is None:
             break
         # get the SMILES and previous results from the json file
-        smi, swscore_ChEMBL, swscore_ZINC = item
+        smi, swscore_chembl, swscore_zinc = item
 
         mol = Molecule(smi)
         mol_graph = mol.get_representation(MolecularGraph)
         nb_atoms = mol_graph.nb_atoms
 
-        # limit the number of atoms to 12
-        if nb_atoms > 12:
+        # limit the number of atoms
+        if nb_atoms > Molecule.max_heavy_atoms:
             continue
 
         # limit the possible atoms to C, O, N, F, S
@@ -118,8 +129,8 @@ def evaluateMolecule(
                         smi,
                         mol_graph.canonical_smiles,
                         nb_atoms,
-                        swscore_ChEMBL,
-                        swscore_ZINC,
+                        swscore_chembl,
+                        swscore_zinc,
                         eval_gcf_chembl.evaluate(mol),
                         eval_ecfp_chembl.evaluate(mol),
                         eval_gcf_chembl_zinc.evaluate(mol),
@@ -130,7 +141,7 @@ def evaluateMolecule(
         )
 
 
-def convert_dataset(input_json: str, output_csv: str, num_proc: int):
+def convert_dataset(input_json: str, output_csv: str, num_proc: int) -> None:
     """Convert json data to csv file
 
     Args:
@@ -140,9 +151,10 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
     """
 
     # parameters for the Molecule class and evaluators
-    Molecule.id_representation_class = SMILES
-    Molecule.representations_class = [MolecularGraph]
-    Molecule.accepted_atoms = ["C", "O", "N", "F", "S"]
+    dp.setup_default_parameters(
+        accepted_atoms=["C", "O", "N", "F", "S"],
+        max_heavy_atoms=12,
+    )
 
     eval_gcf_chembl = evaluator.UnknownGCF(
         path_db="external_data/gcf1.txt", name="chembl"
@@ -159,14 +171,14 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
 
     # prepare the processes
     manager = Manager()
-    results = manager.list()
-    inputQueue = Queue()
+    results: ListProxy[str] = manager.list()
+    input_queue: Queue[Optional[tuple[str, float, float]]] = Queue()
 
     processes = [
         Process(
-            target=evaluateMolecule,
+            target=evaluate_molecule,
             args=(
-                inputQueue,
+                input_queue,
                 results,
                 eval_gcf_chembl,
                 eval_ecfp_chembl,
@@ -181,23 +193,29 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int):
         p.start()
 
     # load completely the json file
-    with open(input_json) as f:
+    with open(input_json, encoding="utf-8") as f:
         data = json.load(f)
 
     # extract data from json file and put it in the inputQueue
     for smi in data:
-        inputQueue.put((smi, data[smi]["swscore_ChEMBL"], data[smi]["swscore_ZINC"]))
+        input_queue.put(
+            (
+                smi,
+                float(data[smi]["swscore_ChEMBL"]),
+                float(data[smi]["swscore_ZINC"]),
+            )
+        )
 
     # put None in the inputQueue to stop the processes
     for _ in range(num_proc):
-        inputQueue.put(None)
+        input_queue.put(None)
 
     # wait for the processes to finish
     for p in processes:
         p.join()
 
     # write results in csv file
-    with open(output_csv, "w") as f:
+    with open(output_csv, "w", encoding="utf-8") as f:
         f.write(
             "smiles_aromatic,smiles_kekulized,nb_atoms,sw_filter_chembl,sw_filter_zinc,"
             "nb_unknown_gcf_chembl,nb_unknown_ecfp_chembl,"
