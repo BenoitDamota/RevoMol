@@ -24,7 +24,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def setup_logging(
-    config_file: str = "logging_configs/2-stderr-json-file.json",
+    config_file: str = "logging_configs/stderr-json-file.json",
     output_file: str = "",
 ) -> None:
     """Setup logging configuration from a JSON file."""
