@@ -4,10 +4,10 @@ Tests for the molecular graph actions.
 
 import pytest
 
+from evomol import default_parameters as dp
 from evomol.action import Action
 from evomol.action import molecular_graph as mg
 from evomol.representation import Molecule
-from evomol import default_parameters as dp
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -32,7 +32,7 @@ def check_actions_smiles(
     new_mols = []
     for action in actions:
         print(action, "->", end=" ")
-        new_mol = action._apply()
+        new_mol = action.apply()
         print(new_mol)
         new_mols.append(new_mol)
     print(f"Expected: {check_mols}")

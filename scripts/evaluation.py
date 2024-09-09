@@ -111,5 +111,5 @@ def error_order() -> None:
 
 if __name__ == "__main__":
     main()
-    print(f"\n{'='*50}\n")
+    print(f"\n{'=' * 50}\n")
     error_order()

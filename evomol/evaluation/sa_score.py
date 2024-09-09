@@ -1,5 +1,5 @@
 """
-SAscore evaluation of a molecule using RDKit implementation.
+SAScore evaluation of a molecule using RDKit implementation.
 
 
 Ertl, Peter, et Ansgar Schuffenhauer.
@@ -26,8 +26,13 @@ def sa_score(molecule: Molecule) -> float:
     """
     mol_graph = molecule.get_representation(MolecularGraph)
 
-    # SAscore is a positive score between 1 and 10
+    # SAScore is a positive score between 1 and 10
     # 10 being the most complex molecule
+
+    # if the molecule is empty, SA Score raises a ZeroDivisionError
+    if mol_graph.canonical_smiles == "":
+        return 1
+
     sa_score_value: float = sascorer.calculateScore(mol_graph.mol)
 
     return sa_score_value
@@ -42,7 +47,7 @@ def normalized_sa_score(molecule: Molecule) -> float:
     Returns:
         float: Normalized synthetic accessibility score
     """
-    sa_score_value: float = molecule.value("SAscore")
+    sa_score_value: float = molecule.value("SAScore")
 
     # normalization with 0 being the most complex molecule
     normalized_sa_score_value: float = 1 - (sa_score_value - 1) / 9
@@ -60,7 +65,7 @@ def zinc_normalized_sa_score(molecule: Molecule) -> float:
     Returns:
         float: Normalized synthetic accessibility score using ZINC statistics
     """
-    sa_score_value: float = molecule.value("SAscore")
+    sa_score_value: float = molecule.value("SAScore")
 
     # normalization constants
     # statistics from 250k_rndm_zinc_drugs_clean.smi

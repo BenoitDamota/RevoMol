@@ -9,6 +9,7 @@ from typing import Callable
 
 import rdkit
 from rdkit import Chem
+from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Contrib.IFG import ifg
 from typing_extensions import override
@@ -38,8 +39,6 @@ def scaffolds(molecule: Molecule) -> list[str]:
     scaffold_smiles = MurckoScaffold.MurckoScaffoldSmiles(mol)
 
     smiles = Chem.MolToSmiles(scaffold_smiles)
-
-    print(smiles)
 
     return [smiles]
 
@@ -113,7 +112,7 @@ def shg_1(molecule: Molecule, level: int = 1) -> list[str]:
 
     for atm_idx in range(mol.GetNumAtoms()):
         for r in range(1, radius_constr):
-            bonds = Chem.AllChem.FindAtomEnvironmentOfRadiusN(mol, r, atm_idx)
+            bonds = AllChem.FindAtomEnvironmentOfRadiusN(mol, r, atm_idx)
 
             if not bonds:
                 break
@@ -181,12 +180,13 @@ def ecfp4(molecule: Molecule) -> list[int]:
     Returns:
         list[int]: List of ecfp4.
     """
-    fp = Chem.AllChem.GetMorganFingerprint(
+    fingerprints_generator = AllChem.GetMorganGenerator(radius=2)
+    fp = fingerprints_generator.GetSparseCountFingerprint(
         Chem.MolFromSmiles(
             molecule.get_representation(MolecularGraph).aromatic_canonical_smiles
-        ),
-        2,
-    )
+        )
+    ).GetNonzeroElements()
+
     on_bits = fp.GetNonzeroElements().keys()
     return list(on_bits)
 

@@ -3,7 +3,6 @@ Module to define the neighborhood strategy for a molecule representation.
 """
 
 import random
-import sys
 from abc import ABC, abstractmethod
 
 from typing_extensions import override
@@ -11,6 +10,7 @@ from typing_extensions import override
 import evomol.action.action as action_module
 from evomol.action import Action, ActionError
 from evomol.evaluation import Evaluation, is_valid_molecule
+from evomol.logging import get_logger
 from evomol.representation import MolecularGraph, Molecule
 from evomol.search.parameters import search_parameters
 
@@ -50,9 +50,17 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
         nb_max_tries: int = 50,
         preselect_actions: bool = True,
     ):
+        """Initialize the random neighborhood strategy.
+
+        Args:
+            depth (int, optional): depth of the mutation. Defaults to 1.
+            nb_max_tries (int, optional): number of tries before giving up on a
+            mutation and returning None. Defaults to 50.
+            preselect_actions (bool, optional): whether if one action space is
+            selected before (True) or if all actions space are computed then
+            randomly selected (False). Defaults to True.
+        """
         super().__init__(depth, nb_max_tries)
-        # whether if one action space is selected before or if all actions
-        # space are computed then randomly selected
         self.preselect_actions: bool = preselect_actions
 
     @override
@@ -74,7 +82,7 @@ class RandomNeighborhoodStrategy(NeighborhoodStrategy):
                 # Is this a critical error? This would mean that the action
                 # is invalid and the code is not working properly.
                 # as only update_representation is supposed to crash
-                print(e, file=sys.stderr)
+                get_logger().critical(e)
                 # count as a failed mutation
                 nb_attempts += 1
                 continue

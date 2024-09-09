@@ -80,7 +80,7 @@ def draw_in_jupyter(svg: str) -> None:
     Args:
         svg (str): SVG image to display.
     """
-    display(SVG(svg))  # type: ignore[no-untyped-call]
+    display(SVG(svg))
 
 
 def draw_in_matplotlib(svg: str, show: bool = True, save_to_path: str = "") -> None:
@@ -141,13 +141,13 @@ def draw_multiple_svgs_in_matplotlib(
     fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 5))
 
     # display each image in a subplot
-    for image, ax in zip(png_datas, axes.flat):  # type: ignore[union-attr]
+    for image, ax in zip(png_datas, axes.flat):
         ax.imshow(image)
         ax.axis("off")
 
     # remove the axis for the empty subplots
-    for j in range(len(png_datas), len(axes.flat)):  # type: ignore[union-attr]
-        axes.flat[j].axis("off")  # type: ignore[union-attr]
+    for j in range(len(png_datas), len(axes.flat)):
+        axes.flat[j].axis("off")
 
     plt.tight_layout()
     if show:

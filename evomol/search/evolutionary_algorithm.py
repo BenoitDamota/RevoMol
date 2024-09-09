@@ -2,14 +2,15 @@
 Module for the evolutionary algorithm.
 """
 
-import random
 import time
 from dataclasses import dataclass
 
-from evomol.evaluation import Evaluation
+from evomol.evaluation import Evaluation, is_valid_molecule
+from evomol.logging import get_logger
 from evomol.representation import MolecularGraph, Molecule
 from evomol.search.neighborhood_strategy import NeighborhoodStrategy
 from evomol.search.parameters import search_parameters
+from evomol.search.selection_strategy import SelectionStrategy
 
 
 @dataclass
@@ -20,9 +21,7 @@ class ParametersEvolutionaryAlgorithm:
     # stop conditions
     max_generations: int = 1000
     max_time: int = 3600
-    # selection
     nb_replacements: int = 10
-    selection: str = "random"  # random, best, roulette
 
 
 # pylint: disable=too-many-instance-attributes
@@ -35,11 +34,13 @@ class EvolutionaryAlgorithm:
         self,
         population: list[Molecule],
         parameters: ParametersEvolutionaryAlgorithm,
+        selection_strategy: SelectionStrategy,
         evaluations: list[Evaluation],
         neighborhood_strategy: NeighborhoodStrategy,
     ):
         self.population: list[Molecule] = population
         self.parameters: ParametersEvolutionaryAlgorithm = parameters
+        self.selection_strategy: SelectionStrategy = selection_strategy
         self.evaluations: list[Evaluation] = evaluations
         self.neighborhood_strategy: NeighborhoodStrategy = neighborhood_strategy
 
@@ -50,12 +51,13 @@ class EvolutionaryAlgorithm:
                 Molecule("") for _ in range(self.parameters.size - len(self.population))
             ]
 
-            for molecule in self.population:
-                self.tabu_molecules.add(
-                    molecule.get_representation(MolecularGraph).canonical_smiles
-                )
-                for evaluation in evaluations:
-                    evaluation.evaluate(molecule)
+        for molecule in self.population:
+            self.tabu_molecules.add(
+                molecule.get_representation(MolecularGraph).canonical_smiles
+            )
+            if not is_valid_molecule(molecule, evaluations):
+                get_logger().error("Invalid molecule in the population : %s", molecule)
+                raise ValueError("Invalid molecule in the population")
 
         # stop conditions
         self.nb_generations: int = 0
@@ -66,94 +68,110 @@ class EvolutionaryAlgorithm:
         """
         Run the evolutionary algorithm.
         """
+        logger = get_logger()
         self.start_time = time.time()
         self.stop_time = self.start_time + self.parameters.max_time
 
         index_selected: int = 0
 
+        logger.info("Start the evolutionary algorithm.")
+
         while self.continue_search():
 
-            order_selection = list(range(len(self.population)))
-            if self.parameters.selection == "best":
-                pass  # already sorted
-            elif self.parameters.selection == "random":
-                random.shuffle(order_selection)
-            elif self.parameters.selection == "roulette":
-                # shuffle the order of the population but gives more chance to
-                # the best to be at the beginning of the list
+            # sort the molecules for the selection
+            # the order is used to select the molecules to mutate
+            # that will replace the worst molecules
+            order_selection = self.selection_strategy.select(self.population)
 
-                total_fitness = sum(
-                    molecule.value(search_parameters.fitness_criteria)
-                    for molecule in self.population
-                )
-
-                selection_probabilities = [
-                    molecule.value(search_parameters.fitness_criteria) / total_fitness
-                    for molecule in self.population
-                ]
-
-                order_selection = random.choices(
-                    range(len(self.population)),
-                    weights=selection_probabilities,
-                    k=len(self.population),
-                )
-
-            # index_selected = random.randint(0, min(len(self.population), 5) - 1)
-            # nb_possible_actions =
-            # self.population[index_selected].nb_possible_actions()
-            # while nb_possible_actions == 0:
-            #     index_selected = index_selected + 1 % len(self.population)
-            #     nb_possible_actions = self.population[
-            #         index_selected
-            #     ].nb_possible_actions()
-
-            # to_replace = (
-            #     self.population[self.parameters.nb_replacements :]
-            #     if len(self.population) > self.parameters.size
-            #     else []
-            # )
-
+            # the first molecule of the order_selection list is the first
+            # one to mutate
             current_selected = 0
 
+            # for each of the worst molecules
             for index_to_replace in range(
                 len(self.population) - 1,
                 len(self.population) - 1 - self.parameters.nb_replacements,
                 -1,
             ):
-                molecule_to_replace = self.population[index_to_replace]
 
                 found_improver: bool = False
 
+                # while no improver is found and there are still molecules to
+                # select
                 while current_selected < len(order_selection) and not found_improver:
+
+                    # select the molecule to mutate
                     index_selected = order_selection[current_selected]
 
+                    # mutate the molecule
                     new_molecule: Molecule | None = self.neighborhood_strategy.mutate(
                         self.population[index_selected],
-                        molecule_to_replace,
+                        self.population[index_to_replace],
                         evaluations=self.evaluations,
                         tabu_molecules=self.tabu_molecules,
                     )
 
+                    smiles_to_mutate = (
+                        self.population[index_selected]
+                        .get_representation(MolecularGraph)
+                        .canonical_smiles
+                    )
+                    smiles_to_replace = (
+                        self.population[index_to_replace]
+                        .get_representation(MolecularGraph)
+                        .canonical_smiles
+                    )
+
+                    # if a new molecule is found
                     if new_molecule is not None:
+                        new_smiles = new_molecule.get_representation(
+                            MolecularGraph
+                        ).canonical_smiles
+                        score = new_molecule.value(search_parameters.fitness_criteria)
+                        logger.info(
+                            "New molecule : %s (%1.4f) from %s to replace %s",
+                            new_smiles,
+                            score,
+                            smiles_to_mutate,
+                            smiles_to_replace,
+                            extra={
+                                "new_molecule": new_smiles,
+                                "to_mutate": smiles_to_mutate,
+                                "to_replace": smiles_to_replace,
+                            },
+                        )
+                        # replace the molecule to replace
                         self.population[index_to_replace] = new_molecule
+                        # add the new molecule to the tabu list
                         self.tabu_molecules.add(
                             new_molecule.get_representation(
                                 MolecularGraph
                             ).canonical_smiles
                         )
                         found_improver = True
+                    else:
+                        logger.info(
+                            "No improvement found from %s to replace %s",
+                            smiles_to_mutate,
+                            smiles_to_replace,
+                            extra={
+                                "to_mutate": smiles_to_mutate,
+                                "to_replace": smiles_to_replace,
+                            },
+                        )
 
+                    # go to the next molecule to select
                     current_selected += 1
 
+            # sort the population by fitness
             self.population.sort(
                 key=lambda x: x.value(search_parameters.fitness_criteria),
                 reverse=True,
             )
 
             self.nb_generations += 1
-            if self.nb_generations % 10 == 0:
-                _ = self.nb_generations
 
+            # statistics
             mean_value = sum(
                 molecule.value(search_parameters.fitness_criteria)
                 for molecule in self.population
@@ -166,18 +184,28 @@ class EvolutionaryAlgorithm:
                 self.population[0].get_representation(MolecularGraph).canonical_smiles
             )
 
-            print(
-                f"-- Generation {self.nb_generations:6} - "
-                # f"Selected {index_selected:2} "
-                # f"({nb_possible_actions:3}-{selected.nb_possible_actions():3}) - "
-                # f"nb new {nb_new_molecules:2} - "
-                # f"{selected.get_representation(MolecularGraph).smiles} \n"
-                f"Mean: {mean_value:1.4f} - "
-                f"Max: {max_value:1.4f} - "
-                f"Min: {min_value:1.4f} - "
-                f" {best_smiles}"
+            logger.info(
+                "Generation %6d - Mean: %1.4f - Max: %1.4f - Min: %1.4f - %s",
+                self.nb_generations,
+                mean_value,
+                max_value,
+                min_value,
+                best_smiles,
+                extra={
+                    "generation": self.nb_generations,
+                    "mean": mean_value,
+                    "max": max_value,
+                    "min": min_value,
+                    "best_smiles": best_smiles,
+                },
             )
-        print("End of search")
+
+        elapsed_time = time.time() - self.start_time
+        logger.info(
+            "End of search - elapsed time: %s",
+            elapsed_time,
+            extra={"elapsed_time": elapsed_time},
+        )
         bests = [
             (
                 molecule.get_representation(MolecularGraph).canonical_smiles,
@@ -185,7 +213,11 @@ class EvolutionaryAlgorithm:
             )
             for molecule in self.population[:5]
         ]
-        print(f"Bests:{bests}")
+        logger.info(
+            "Bests: %s",
+            bests,
+            extra={"bests": {str(i): str(best) for i, best in enumerate(bests)}},
+        )
 
     def continue_search(self) -> bool:
         """

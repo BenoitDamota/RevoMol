@@ -3,20 +3,6 @@ List Morgan fingerprints that are not in the reference database.
 ECFP4 are equivalent to Morgan fingerprints with radius 2.
 Filter out molecules that contain unknown Morgan fingerprints.
 
-TODO change the way of computing the Morgan fingerprints.
-Currently using version rdkit==2023.9.6 to avoid :
-DEPRECATION WARNING: please use MorganGenerator
-with the code :
-
-fingerprints = Chem.AllChem.GetMorganFingerprint(
-    mol, radius=self.radius
-).GetNonzeroElements()
-
-Look at the following links for more information :
-http://www.rdkit.org/new_docs/GettingStartedInPython.html#morgan-fingerprints-circular-fingerprints
-https://greglandrum.github.io/rdkit-blog/posts/2023-01-18-fingerprint-generator-tutorial.html
-
-
 Inspired on the work of Patrick Walters :
 https://github.com/PatWalters/silly_walks
 """
@@ -24,10 +10,36 @@ https://github.com/PatWalters/silly_walks
 import os
 
 from rdkit import Chem
+from rdkit.Chem import AllChem
 from typing_extensions import override
 
 from evomol.evaluation.evaluation import Evaluation, EvaluationError
 from evomol.representation import MolecularGraph, Molecule
+
+
+def list_ecfp(molecule: Molecule, radius: int = 2) -> list[int]:
+    """
+    List the ECFP fingerprints of a molecule.
+
+    Args:
+        molecule (Molecule): molecule to evaluate
+        radius (int, optional): radius of the ECFP fingerprint. Defaults to 2.
+
+    Returns:
+        list[int]: list of ECFP fingerprints
+    """
+    mol = Chem.MolFromSmiles(
+        molecule.get_representation(MolecularGraph).canonical_smiles
+    )
+
+    fingerprints = list(
+        AllChem.GetMorganGenerator(radius=radius)
+        .GetSparseCountFingerprint(mol)
+        .GetNonzeroElements()
+        .keys()
+    )
+    print(fingerprints)
+    return fingerprints
 
 
 class UnknownECFP(Evaluation):
@@ -65,6 +77,9 @@ class UnknownECFP(Evaluation):
                 int(line.strip()) for line in f.readlines()
             )
 
+        # create the Morgan fingerprints generator
+        self.fingerprints_generator = AllChem.GetMorganGenerator(radius=2)
+
     @override
     def _evaluate(self, molecule: Molecule) -> int:
 
@@ -72,12 +87,9 @@ class UnknownECFP(Evaluation):
             molecule.get_representation(MolecularGraph).canonical_smiles
         )
 
-        if mol is None:
-            return 1
-
         # get the Morgan fingerprints
-        fingerprints = Chem.AllChem.GetMorganFingerprint(
-            mol, radius=self.radius
+        fingerprints = self.fingerprints_generator.GetSparseCountFingerprint(
+            mol
         ).GetNonzeroElements()
 
         # count the number of ecfp that are not in the reference database

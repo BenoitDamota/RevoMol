@@ -1,6 +1,5 @@
-numpy==1.26.4
-rdkit==2023.9.6
-networkx>=3.3
+rdkit==2024.3.5
+networkx>=3.2
 typing_extensions>=4.12
 typer>=0.12
 pandas>=2.2.2

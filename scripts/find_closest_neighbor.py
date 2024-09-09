@@ -7,13 +7,13 @@ You can also specify the max number of heavy atoms allowed.
 
 
 examples from CLI:
-python find_closest_neighbor.py C chembl 10
+python scripts/find_closest_neighbor.py C chembl 10
 
 TTF
-python find_closest_neighbor.py "C1=CSC(=C2SC=CS2)S1" chembl 10
+python scripts/find_closest_neighbor.py "C1=CSC(=C2SC=CS2)S1" chembl 10
 
 DD
-python find_closest_neighbor.py "N1=S=NC2=C1N=S=N2" chembl 10
+python scripts/find_closest_neighbor.py "N1=S=NC2=C1N=S=N2" chembl 10
 """
 
 import os

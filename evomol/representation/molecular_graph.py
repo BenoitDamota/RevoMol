@@ -38,10 +38,9 @@ class MolecularGraph(MoleculeRepresentation):
         return mol
 
     def __eq__(self, value: object) -> bool:
-        return (
-            isinstance(value, MolecularGraph)
-            and self.aromatic_canonical_smiles == value.aromatic_canonical_smiles
-        )
+        if not isinstance(value, MolecularGraph):
+            return False
+        return self.aromatic_canonical_smiles == value.aromatic_canonical_smiles
 
     @override
     def representation(self) -> str:
@@ -230,7 +229,7 @@ class MolecularGraph(MoleculeRepresentation):
         Returns:
             int: bond type between the two atoms
         """
-        bond = self.mol.GetBondBetweenAtoms(atom1_idx, atom2_idx)
+        bond: Chem.Bond | None = self.mol.GetBondBetweenAtoms(atom1_idx, atom2_idx)
         if bond is None:
             return 0
         return int(bond.GetBondType())
@@ -337,7 +336,9 @@ class MolecularGraph(MoleculeRepresentation):
                 bond type
         """
         # Extracting current bond between given atoms
-        bond = self.mol.GetBondBetweenAtoms(int(atom1_idx), int(atom2_idx))
+        bond: Chem.Bond | None = self.mol.GetBondBetweenAtoms(
+            int(atom1_idx), int(atom2_idx)
+        )
 
         bond_type = None
         if bond_type_num == 0:

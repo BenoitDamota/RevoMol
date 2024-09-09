@@ -1,7 +1,7 @@
 """
 Convert json data (Evo10, ChEMBL, GDBChEMBL, ZINC) to csv file.
 The maximum number of atoms is 12 and the atoms are limited to C, O, N, F, S.
-Change default_parameters to modify the number of atoms and the atoms allowed 
+Change default_parameters to modify the number of atoms and the atoms allowed
 in convert_dataset.
 
 Data origin :
@@ -22,7 +22,7 @@ value: dict {
 
 ZINC_neutral_dict.json
 https://figshare.com/articles/dataset/ZINC_sub_set_dictionnary_of_CNOFS_molecules_with_SMILES_and_sillywalk_scores/20059400?backTo=/collections/Sillywalks_scores_of_organic_chemistry_datasets_PC9_QM9_OD9_GDB11_/6041117
-All ZINC 20 neutral singlet molecules without any atomic charges 
+All ZINC 20 neutral singlet molecules without any atomic charges
 (formal or real) composed of only H, C, N, O, F.
 
 Key: SMILES
@@ -34,7 +34,7 @@ value: dict {
 
 ChEMBL_neutral_dict.json
 https://figshare.com/articles/dataset/ChEMBL25_dataset_dictionnary_of_CNOFS_molecules_with_SMILES_and_sillywalk_score/20054381?backTo=/collections/Sillywalks_scores_of_organic_chemistry_datasets_PC9_QM9_OD9_GDB11_/6041117
-Subset of 1 191 453 neutral singlet molecules without any atomic charges 
+Subset of 1 191 453 neutral singlet molecules without any atomic charges
 (formal or real) with only H, C, N, O F and S.
 
 Key: SMILES
@@ -46,7 +46,7 @@ value: dict {
 
 GDBChEMBL_neutral_dict.json
 https://figshare.com/articles/dataset/GDBChEMBL_sub_set_dictionnary_of_CNOFS_molecules_with_SMILES_and_sillywalk_score/20769853?backTo=/collections/Sillywalks_scores_of_organic_chemistry_datasets_PC9_QM9_OD9_GDB11_/6041117
-The 3 786 315 neutral singlet molecules without any atomic charges 
+The 3 786 315 neutral singlet molecules without any atomic charges
 (formal or real) composed of only H, C, N, O, F and S that belong to GDBChEMBL.
 
 Key: SMILES
@@ -64,7 +64,6 @@ import os
 import sys
 from multiprocessing import Manager, Process, Queue
 from multiprocessing.managers import ListProxy
-from typing import Optional
 
 import typer
 
@@ -79,7 +78,7 @@ from evomol.representation import MolecularGraph, Molecule
 
 
 def evaluate_molecule(
-    input_queue: Queue[Optional[tuple[str, float, float]]],
+    input_queue: Queue,
     results: ListProxy[str],
     eval_gcf_chembl: evaluator.UnknownGCF,
     eval_ecfp_chembl: evaluator.UnknownECFP,
@@ -98,7 +97,7 @@ def evaluate_molecule(
         eval_ecfp_chembl_zinc (evaluator.UnknownECFP): evaluator ECFP chembl_zinc
     """
     while True:
-        item = input_queue.get()
+        item: tuple[str, float, float] | None = input_queue.get()
         if item is None:
             break
         # get the SMILES and previous results from the json file
@@ -172,7 +171,7 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int) -> None:
     # prepare the processes
     manager = Manager()
     results: ListProxy[str] = manager.list()
-    input_queue: Queue[Optional[tuple[str, float, float]]] = Queue()
+    input_queue: Queue = Queue()
 
     processes = [
         Process(

@@ -7,14 +7,14 @@ Parameters are:
 - nb_heavy_atoms: int - The max number of heavy atoms allowed.
 - depth: int - The depth of the enumeration.
 - nb_cpu: int - The number of CPU to use. 0 to use all CPUs.
-- enumeration_type: str - The type of enumeration to use (sequential, 
+- enumeration_type: str - The type of enumeration to use (sequential,
     multiprocessing or workers).
 
 simple example:
 python scripts/enumerate_smiles.py C chembl_zinc 3 2 0 multiprocessing
 
 parallel example (join the 2 lines):
-parallel -j 20 python scripts/enumerate_smiles.py 
+parallel -j 20 python scripts/enumerate_smiles.py
     C {1} {2} 2 0 multiprocessing ::: chembl chembl_zinc ::: {1..10}
 """
 

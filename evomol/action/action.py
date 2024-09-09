@@ -116,3 +116,25 @@ def pprint_action_space(
                 print(f"\t\t{action}")
                 nb_actions += 1
     print(f"Nb actions: {nb_actions}")
+
+
+def pprint_action_space_and_apply(
+    action_list: dict[str, dict[str, list[Action]]],
+    molecule: molecule_module.Molecule,
+) -> None:
+    """Pretty print the action space of a molecule and apply all the actions."""
+    print(molecule)
+    nb_actions = 0
+    print(f"{len(action_list)} representations: ")
+    for representation, action_spaces in action_list.items():
+        print(repr(representation))
+        print(f"\t{len(action_spaces.keys())} actions space :")
+        for action_space, actions in action_spaces.items():
+            print(f"\t{action_space}")
+            print(f"\t\t{len(actions)} actions :")
+            for action in actions:
+                print(f"\t\t{action}", end=" -> ")
+                new_mol = action.apply()
+                print(new_mol)
+                nb_actions += 1
+    print(f"Nb actions: {nb_actions}")

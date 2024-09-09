@@ -2,14 +2,14 @@
 Compare data enumerated by EvoMol with other datasets
 
 Enumerated datasets uses canonical and non aromatic smiles and are filtered
-with ECFP and GCF filters (chembl or chembl_zinc depending on the name of the 
+with ECFP and GCF filters (chembl or chembl_zinc depending on the name of the
 file)
-The max number of atom allowed to generate the molecules is indicated in the 
+The max number of atom allowed to generate the molecules is indicated in the
 name of the file.
 
 for the other datasets, they are under csv format with the following columns:
 - smiles_aromatic: SMILES of the molecule from the original json dataset
-- smiles_kekulized: SMILES of the molecule after kekulization 
+- smiles_kekulized: SMILES of the molecule after kekulization
     (non aromatic and canonical)
 - nb_atoms: number of atoms in the molecule
 - sw_filter_chembl: result of chembl filter from the original json dataset

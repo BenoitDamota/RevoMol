@@ -15,17 +15,17 @@ The choice of the weights for the QED score is the default one provided by RDKit
 w=(0.66, 0.46, 0.05, 0.61, 0.06, 0.65, 0.48, 0.95)
 
 To get the different scores :
-properties: Chem.QED.QEDproperties = Chem.QED.properties(
-    Chem.MolFromSmiles(mol_graph.canonical_smiles)
-)
-print(properties.ALERTS)
-print(properties.ALOGP)
-print(properties.AROM)
-print(properties.HBA)
-print(properties.HBD)
-print(properties.MW)
-print(properties.PSA)
-print(properties.ROTB)
+# properties: Chem.QED.QEDproperties = Chem.QED.properties(
+#     Chem.MolFromSmiles(mol_graph.canonical_smiles)
+# )
+# print(properties.ALERTS)
+# print(properties.ALOGP)
+# print(properties.AROM)
+# print(properties.HBA)
+# print(properties.HBD)
+# print(properties.MW)
+# print(properties.PSA)
+# print(properties.ROTB)
 """
 
 from rdkit.Chem import MolFromSmiles
@@ -36,7 +36,8 @@ from evomol.representation import MolecularGraph, Molecule
 
 
 def qed_score(molecule: Molecule) -> float:
-    """Calculate the quantitative estimate of drug-likeness (QED) score of a molecule.
+    """Calculate the quantitative estimate of drug-likeness (QED) score of a
+    molecule.
 
     Args:
         molecule (Molecule): Molecule to evaluate

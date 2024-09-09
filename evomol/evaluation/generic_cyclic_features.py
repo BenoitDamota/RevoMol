@@ -53,6 +53,27 @@ def convert_to_carbon(smiles: str) -> str:
     return mol_scaffolds.canonical_smiles
 
 
+def divide_subgraphs(smiles: str) -> set[str]:
+    """Remove bridge bonds in the molecule and return subgraphs
+
+    Args:
+        smiles (str): SMILES representation of the molecule
+
+    Returns:
+        set[str]: subgraphs in the molecule
+    """
+    mol_graph = MolecularGraph(smiles)
+
+    # delete all bridge bonds
+    for atom1, atom2 in mol_graph.bridge_bonds:
+        mol_graph.set_bond(atom1, atom2, 0)
+
+    mol_graph.update_representation()
+
+    subgraphs: set[str] = set(mol_graph.canonical_smiles.split("."))
+    return subgraphs
+
+
 def list_gcf(smiles: str) -> set[str]:
     """Compute all generic cyclic features (with insaturations) of a molecule.
 
@@ -66,15 +87,7 @@ def list_gcf(smiles: str) -> set[str]:
     Returns:
         list[str]: List of generic cyclic features (with insaturations)
     """
-    mol_graph = MolecularGraph(smiles)
-
-    # delete all bridge bonds
-    for atom1, atom2 in mol_graph.bridge_bonds:
-        mol_graph.set_bond(atom1, atom2, 0)
-
-    mol_graph.update_representation()
-
-    subgraphs: set[str] = set(mol_graph.canonical_smiles.split("."))
+    subgraphs: set[str] = divide_subgraphs(smiles)
 
     # computes smiles of rings features and remove unique atoms
     # the length condition is to avoid computing the scaffold of subgraphs

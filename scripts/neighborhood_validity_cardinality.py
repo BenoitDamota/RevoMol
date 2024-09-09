@@ -5,23 +5,25 @@ The script is used to compare the performance of the two functions :
 - `find_neighbors_and_filter_with_duplicates`
 - `find_neighbors_and_filter_without_duplicates`
 from the evomol.search.enumeration module.
-The script is used to compare the performance of the two functions in terms of 
+The script is used to compare the performance of the two functions in terms of
 the number of molecules in the neighborhood, the number of valid molecules in
-this neighborhood and the time taken to compute the neighborhood and to filter 
+this neighborhood and the time taken to compute the neighborhood and to filter
 the valid molecules in this neighborhood.
 
 example:
-    python scripts/neighborhood_validity_cardinality.py "CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1"
+    python scripts/neighborhood_validity_cardinality.py
+        "CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1"
 
 gives the following output:
 
-molecule,filter_between_depth,keep_duplicates,depth,nb_molecules,|molecules|,nb_valids,|valid|,time_generation,time_filter
+molecule,filter_between_depth,keep_duplicates,depth,nb_molecules,|molecules|
+,nb_valids,|valid|,time_generation,time_filter
 CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1,False,True,1,236,220,22,20,0.17,0.46
 CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1,False,True,2,58394,26708,1228,413,30.09,95.90
 CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1,False,False,1,220,220,20,20,0.13,0.35
 CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1,False,False,2,26708,26708,413,413,28.19,44.52
 
-It means that starting from the molecule 
+It means that starting from the molecule
 "CS(=O)(=O)C1=C(O)C(CC2=CC=C(F)S2)=CC(F)=C1" (which as "good results" in QED).
 At a depth of 2 when not filtering molecules between each depth, if you keep
 duplicate molecules in the neighborhood, you will have 58394 molecules to

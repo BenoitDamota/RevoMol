@@ -6,9 +6,63 @@ https://github.com/mCodingLLC/VideosSampleCode/tree/master/videos/135_modern_log
 import datetime as dt
 import json
 import logging
+import logging.config
+import logging.handlers
+import pathlib
 from typing import Any
 
 from typing_extensions import override
+
+
+def init_logger(
+    config_file: str = "logging_configs/stderr-json-file.json",
+    output_file: str = "logs/evomol_default.log",
+) -> logging.Logger:
+    """Initialize the logger.
+
+    Args:
+        config_file (str, optional): Path to the JSON file containing the
+            logging configuration settings.
+            Defaults to "logging_configs/stderr-json-file.json".
+        output_file (str, optional): Path to the output log file. Defaults to
+            "logs/evomol_default.log".
+
+    Returns:
+        logging.Logger: The logger object.
+    """
+
+    setup_logging(
+        config_file=config_file,
+        output_file=output_file,
+    )
+
+    logging.basicConfig(level="INFO")
+    return logging.getLogger("evomol_logger")
+
+
+def get_logger() -> logging.Logger:
+    """Get the logger.
+
+    Returns:
+        logging.Logger: The logger object.
+    """
+    return logging.getLogger("evomol_logger")
+
+
+def setup_logging(
+    config_file: str = "logging_configs/stderr-json-file.json",
+    output_file: str = "",
+) -> None:
+    """Setup logging configuration from a JSON file."""
+    config_f = pathlib.Path(config_file)
+    with open(config_f, encoding="utf-8") as f_in:
+        config = json.load(f_in)
+
+    if output_file:
+        config["handlers"]["file"]["filename"] = output_file
+
+    logging.config.dictConfig(config)
+
 
 LOG_RECORD_BUILTIN_ATTRS = {
     "args",

@@ -13,38 +13,19 @@ Il utilise aussi un système de rotation de fichier de log pour ne pas avoir un
 fichier de log trop volumineux (logging.handlers.RotatingFileHandler).
 """
 
-import json
-import logging.config
-import logging.handlers
 import os
-import pathlib
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+# pylint: disable=wrong-import-position, import-error
 
-def setup_logging(
-    config_file: str = "logging_configs/stderr-json-file.json",
-    output_file: str = "",
-) -> None:
-    """Setup logging configuration from a JSON file."""
-    config_file = pathlib.Path(config_file)
-    with open(config_file, encoding="utf-8") as f_in:
-        config = json.load(f_in)
-
-    if output_file:
-        config["handlers"]["file"]["filename"] = output_file
-
-    logging.config.dictConfig(config)
+from evomol.logging import init_logger
 
 
 def main() -> None:
     """Main function to test the logging configuration."""
-    logger = logging.getLogger("my_app")
-
-    setup_logging(output_file="logs/test.log.jsonl")
-
-    logging.basicConfig(level="INFO")
+    logger = init_logger(output_file="logs/test.log.jsonl")
 
     logger.debug("debug message", extra={"x": "hello"})
     logger.info("info message")

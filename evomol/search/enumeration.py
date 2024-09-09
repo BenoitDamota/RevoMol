@@ -1,8 +1,8 @@
 """
 Those functions are used to explore the neighbors of a molecule up to a certain depth.
 Either by listing all the neighbors for one molecule and printing the valid ones
-with list_up_to_depth_from_smiles or by exploring the complete neighborhood of 
-a molecule and the neighborhood of its neighbors and so on with 
+with list_up_to_depth_from_smiles or by exploring the complete neighborhood of
+a molecule and the neighborhood of its neighbors and so on with
 enumerate_from_smiles.
 
 Those functions may be be optimized.
@@ -15,25 +15,25 @@ enumerate_from_smiles_parallel is optimized by using multiprocessing to explore
 the neighbors of the molecules in parallel.
 I tried to use multiprocessing to check the validity of the molecules but it was
 slower :
-    to_check: set[str] = set()
-    for result in neighbors_results:
-        for new_smi in result:
-            # if the SMILES is already in the set of valid or invalid SMILES
-            # it has already been explored or is in the queue to be explored
-            if new_smi in found_valid or new_smi in found_invalid:
-                continue
+# to_check: set[str] = set()
+# for result in neighbors_results:
+#     for new_smi in result:
+#         # if the SMILES is already in the set of valid or invalid SMILES
+#         # it has already been explored or is in the queue to be explored
+#         if new_smi in found_valid or new_smi in found_invalid:
+#             continue
 
-            to_check.add(new_smi)
+#         to_check.add(new_smi)
 
-    validity_results = pool.starmap(
-        parallel_is_valid_molecule, [(smi, evaluations) for smi in to_check]
-    )
-    for new_smi, is_valid in validity_results:
-        if is_valid:
-            to_explore.add(new_smi)
-            found_valid.add(new_smi)
-        else:
-            found_invalid.add(new_smi)
+# validity_results = pool.starmap(
+#     parallel_is_valid_molecule, [(smi, evaluations) for smi in to_check]
+# )
+# for new_smi, is_valid in validity_results:
+#     if is_valid:
+#         to_explore.add(new_smi)
+#         found_valid.add(new_smi)
+#     else:
+#         found_invalid.add(new_smi)
 """
 
 from multiprocessing import Manager, Pool, Queue, cpu_count
@@ -292,8 +292,6 @@ def worker_find_neighbors(
     """
     while True:
         smiles = explore_queue.get()
-        if smiles is None:
-            break
 
         neighbors = find_neighbors(Molecule(smiles), depth)
         neighbor_queue.put(neighbors)

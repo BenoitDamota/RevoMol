@@ -1,5 +1,5 @@
 """
-Attempt to replace the tanimoto evaluation function from GuacaMol but the 
+Attempt to replace the tanimoto evaluation function from GuacaMol but the
 results are not the same.
 Should explore the implementation in GuacaMol
 

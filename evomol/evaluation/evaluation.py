@@ -1,5 +1,5 @@
 """
-This module contains the abstract class Evaluation, the class EvaluationError, 
+This module contains the abstract class Evaluation, the class EvaluationError,
 the class Function, and the function is_valid_molecule.
 
 Evaluation defines the interface for evaluations.
@@ -7,7 +7,7 @@ Evaluations are used to compute properties of molecules.
 They are used to filter molecules and to compute the fitness of a molecule in
 evolutionary algorithms.
 
-The EvaluationError class is an exception that is raised when an evaluation 
+The EvaluationError class is an exception that is raised when an evaluation
 cannot be computed for a molecule.
 
 Function is a subclass of Evaluation that defines an evaluation based on a
