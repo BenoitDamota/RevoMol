@@ -112,8 +112,8 @@ def main() -> None:
     )
 
     logger = init_logger(
-        config_file="logging_configs/stderr-json-file.json",
-        output_file="logs/evomol_default.log",
+        config_file=os.path.join("logging_configs", "stderr-json-file.json"),
+        output_file=os.path.join("logs", "evomol_default.log"),
     )
 
     random_seed = random.randint(0, 1000)

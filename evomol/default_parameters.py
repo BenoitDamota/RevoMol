@@ -2,6 +2,7 @@
 Functions to set default parameters for evomol.
 """
 
+import os
 from typing import Optional
 
 from evomol import evaluation as evaluator
@@ -77,7 +78,7 @@ def setup_filters(filter_name: str) -> list[evaluator.Evaluation]:
     if filter_name == "chembl":
         return [
             evaluator.UnknownGCF(
-                path_db="external_data/gcf1.txt",
+                path_db=os.path.join("external_data", "gcf1.txt"),
                 name="chembl",
             ),
             evaluator.FilterUnknownGCF(
@@ -85,7 +86,7 @@ def setup_filters(filter_name: str) -> list[evaluator.Evaluation]:
                 name="chembl",
             ),
             evaluator.UnknownECFP(
-                path_db="external_data/ecfp4_ChEMBL.txt",
+                path_db=os.path.join("external_data", "ecfp4_ChEMBL.txt"),
                 radius=2,
                 name="chembl",
             ),
@@ -97,7 +98,7 @@ def setup_filters(filter_name: str) -> list[evaluator.Evaluation]:
     if filter_name == "chembl_zinc":
         return [
             evaluator.UnknownGCF(
-                path_db="external_data/gcf2.txt",
+                path_db=os.path.join("external_data", "gcf2.txt"),
                 name="chembl_zinc",
             ),
             evaluator.FilterUnknownGCF(
@@ -105,7 +106,7 @@ def setup_filters(filter_name: str) -> list[evaluator.Evaluation]:
                 name="chembl_zinc",
             ),
             evaluator.UnknownECFP(
-                path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
+                path_db=os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
                 radius=2,
                 name="chembl_zinc",
             ),
@@ -125,20 +126,20 @@ def chembl_and_chembl_zinc_evaluations() -> list[evaluator.Evaluation]:
     """
     return [
         evaluator.UnknownGCF(
-            path_db="external_data/gcf1.txt",
+            path_db=os.path.join("external_data", "gcf1.txt"),
             name="chembl",
         ),
         evaluator.UnknownECFP(
-            path_db="external_data/ecfp4_ChEMBL.txt",
+            path_db=os.path.join("external_data", "ecfp4_ChEMBL.txt"),
             radius=2,
             name="chembl",
         ),
         evaluator.UnknownGCF(
-            path_db="external_data/gcf2.txt",
+            path_db=os.path.join("external_data", "gcf2.txt"),
             name="chembl_zinc",
         ),
         evaluator.UnknownECFP(
-            path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
+            path_db=os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
             radius=2,
             name="chembl_zinc",
         ),

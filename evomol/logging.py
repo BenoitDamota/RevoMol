@@ -8,6 +8,7 @@ import json
 import logging
 import logging.config
 import logging.handlers
+import os
 import pathlib
 from typing import Any
 
@@ -15,17 +16,17 @@ from typing_extensions import override
 
 
 def init_logger(
-    config_file: str = "logging_configs/stderr-json-file.json",
-    output_file: str = "logs/evomol_default.log",
+    config_file: str = os.path.join("logging_configs", "stderr-json-file.json"),
+    output_file: str = os.path.join("logs", "evomol_default.log"),
 ) -> logging.Logger:
     """Initialize the logger.
 
     Args:
         config_file (str, optional): Path to the JSON file containing the
             logging configuration settings.
-            Defaults to "logging_configs/stderr-json-file.json".
+            Defaults to os.path.join("logging_configs", "stderr-json-file.json").
         output_file (str, optional): Path to the output log file. Defaults to
-            "logs/evomol_default.log".
+            os.path.join("logs", "evomol_default.log").
 
     Returns:
         logging.Logger: The logger object.
@@ -50,7 +51,7 @@ def get_logger() -> logging.Logger:
 
 
 def setup_logging(
-    config_file: str = "logging_configs/stderr-json-file.json",
+    config_file: str = os.path.join("logging_configs", "stderr-json-file.json"),
     output_file: str = "",
 ) -> None:
     """Setup logging configuration from a JSON file."""

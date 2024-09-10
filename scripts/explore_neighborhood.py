@@ -31,13 +31,19 @@ def explore_neighborhood(smiles: str) -> None:
     dp.setup_default_action_space(with_add_group=False, with_remove_group=False)
 
     # Load the GCF and ECFP evaluators
-    gcf_1 = evaluator.UnknownGCF(path_db="external_data/gcf1.txt", name="chembl")
-    ecfp_1 = evaluator.UnknownECFP(
-        path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
+    gcf_1 = evaluator.UnknownGCF(
+        path_db=os.path.join("external_data", "gcf1.txt"), name="chembl"
     )
-    gcf_2 = evaluator.UnknownGCF(path_db="external_data/gcf2.txt", name="chembl_zinc")
+    ecfp_1 = evaluator.UnknownECFP(
+        path_db=os.path.join("external_data", "ecfp4_ChEMBL.txt"),
+        radius=2,
+        name="chembl",
+    )
+    gcf_2 = evaluator.UnknownGCF(
+        path_db=os.path.join("external_data", "gcf2.txt"), name="chembl_zinc"
+    )
     ecfp_2 = evaluator.UnknownECFP(
-        path_db="external_data/ecfp4_ChEMBL_ZINC.txt",
+        path_db=os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
         radius=2,
         name="chembl_zinc",
     )

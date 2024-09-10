@@ -105,9 +105,10 @@ def setup_and_launch_enumeration(
     )
 
     # print the valid molecules in a file, one molecule per line
-    file_path = (
-        f"output/enumeration_{can_smi}_{eval_name}"
-        f"_max_atom_{nb_heavy_atoms}_depth_{depth}.txt"
+    file_path = os.path.join(
+        "output",
+        f"enumeration_{can_smi}_{eval_name}_max_atom_"
+        f"{nb_heavy_atoms}_depth_{depth}.txt",
     )
     with open(file_path, "w", encoding="utf8") as file:
         for mol in found_valid:

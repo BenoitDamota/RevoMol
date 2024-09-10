@@ -58,7 +58,7 @@ class UnknownECFP(Evaluation):
         """
         Init FilterECFP with the path to the reference database and the radius.
 
-        Use file "external_data/ecfp4_ChEMBL_ZINC.txt" for ZINC database.
+        Use file "ecfp4_ChEMBL_ZINC.txt" for ZINC database.
 
         Args:
             path_db (str): file that contains the reference list of ECFC4

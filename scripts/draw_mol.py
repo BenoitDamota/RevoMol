@@ -47,12 +47,12 @@ svg_1 = mol_to_svg(
 draw_in_matplotlib(
     svg_1,
     show=False,
-    save_to_path="output/visualization/CCO.png",
+    save_to_path=os.path.join("output", "visualization", "CCO.png"),
 )
 
 svgs = [mol_to_svg(mol) for mol in molecules]
 draw_multiple_svgs_in_matplotlib(
     svgs,
     show=True,
-    save_to_path="output/visualization/plot.png",
+    save_to_path=os.path.join("output", "visualization", "plot.png"),
 )

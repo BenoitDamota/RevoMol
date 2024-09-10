@@ -25,7 +25,7 @@ from evomol.logging import init_logger
 
 def main() -> None:
     """Main function to test the logging configuration."""
-    logger = init_logger(output_file="logs/test.log.jsonl")
+    logger = init_logger(output_file=os.path.join("logs", "test.log.jsonl"))
 
     logger.debug("debug message", extra={"x": "hello"})
     logger.info("info message")

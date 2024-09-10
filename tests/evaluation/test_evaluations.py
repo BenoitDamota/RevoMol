@@ -2,6 +2,8 @@
 Tests for the molecular graph actions.
 """
 
+import os
+
 import pytest
 
 import evomol.evaluation as evaluator
@@ -104,6 +106,38 @@ def test_cycle_score(smiles: str, value: float) -> None:
 def test_gcf_conversion(smiles: str, features: set[str]) -> None:
     """Test the list_gcf function."""
     assert list_gcf(smiles) == features
+
+
+def test_known_gcf() -> None:
+    """Test the known gcf evaluation."""
+    gcf1 = evaluator.UnknownGCF(
+        os.path.join("external_data", "gcf1.txt"),
+        "chembl",
+    )
+
+    gcf2 = evaluator.UnknownGCF(
+        os.path.join("external_data", "gcf2.txt"),
+        "chembl_zinc",
+    )
+
+    known_smiles = [
+        "C1=CC=CC=C1",
+        "C1=CC=CC=C1C1=CC=CC=C1",
+        "C1=CN=CN=C1C1=CN=CN=C1",
+    ]
+
+    for smiles in known_smiles:
+        assert gcf1.evaluate(Molecule(smiles)) == 0
+        assert gcf2.evaluate(Molecule(smiles)) == 0
+
+    unknown_smiles = [
+        ("C=CN1OC(OBr)C2C(OBr)=C2N1", 1, 1),
+        ("COC(F)C1C(F)C(CC2=C(N)C3=NC3=C(Br)2)C1", 1, 1),
+    ]
+
+    for smiles, unknown_1, unknown_2 in unknown_smiles:
+        assert gcf1.evaluate(Molecule(smiles)) == unknown_1
+        assert gcf2.evaluate(Molecule(smiles)) == unknown_2
 
 
 @pytest.mark.parametrize(
@@ -325,6 +359,38 @@ def test_convert_to_carbon(smiles: str, carbon_smiles: str) -> None:
 def test_list_ecfp(smiles: str, ecfp: list[int]) -> None:
     """Test the list_ecfp function."""
     assert list_ecfp(Molecule(smiles)) == ecfp
+
+
+def test_known_ecfp() -> None:
+    """Test the known ecfp evaluation."""
+    ecfp1 = evaluator.UnknownECFP(
+        os.path.join("external_data", "ecfp4_ChEMBL.txt"),
+        "chembl",
+    )
+
+    ecfp2 = evaluator.UnknownECFP(
+        os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
+        "chembl_zinc",
+    )
+
+    known_smiles = [
+        "C1=CC=CC=C1",
+        "C1=CC=CC=C1C1=CC=CC=C1",
+        "C1=CN=CN=C1C1=CN=CN=C1",
+    ]
+
+    for smiles in known_smiles:
+        assert ecfp1.evaluate(Molecule(smiles)) == 0
+        assert ecfp2.evaluate(Molecule(smiles)) == 0
+
+    unknown_smiles = [
+        ("C=CN1OC(OBr)C2C(OBr)=C2N1", 14, 11),
+        ("COC(F)C1C(F)C(CC2=C(N)C3=NC3=C(Br)2)C1", 10, 10),
+    ]
+
+    for smiles, unknown_1, unknown_2 in unknown_smiles:
+        assert ecfp1.evaluate(Molecule(smiles)) == unknown_1
+        assert ecfp2.evaluate(Molecule(smiles)) == unknown_2
 
 
 ########################################

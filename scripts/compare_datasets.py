@@ -89,9 +89,10 @@ def compare_our_data(nb_heavy_atoms: int) -> None:
     # read the enumerated data
     for eval_name in ["chembl", "chembl_zinc"]:
         for nb_heavy_atom in range(1, nb_heavy_atoms + 1):
-            file = (
-                f"output/enumeration_C_depth_2/enumeration_C_{eval_name}"
-                f"_max_atom_{nb_heavy_atom}_depth_2.txt"
+            file = os.path.join(
+                "output",
+                "enumeration_C_depth_2",
+                f"enumeration_C_{eval_name}_max_atom_{nb_heavy_atom}_depth_2.txt",
             )
             with open(file, encoding="utf-8") as f:
                 for line in f.readlines():
@@ -147,7 +148,7 @@ def differences_filters(dataset: str) -> None:
     Args:
         dataset (str): Name of the dataset (Evo10, ChEMBL, GDBChEMBL, ZINC)
     """
-    file = f"external_data/smiles_datasets/{dataset}.csv"
+    file = os.path.join("external_data", "smiles_datasets", f"{dataset}.csv")
     data = pd.read_csv(file)
 
     # when the old filter is not applied but the new filter is applied (chembl)
@@ -156,7 +157,12 @@ def differences_filters(dataset: str) -> None:
     ]
     if data_.shape[0] > 0:
         data_.to_csv(
-            f"output/diff_filter/new_filtered_chembl_{dataset}.csv", index=False
+            os.path.join(
+                "output",
+                "diff_filter",
+                f"new_filtered_chembl_{dataset}.csv",
+            ),
+            index=False,
         )
 
     # when the old filter is applied but the new filter is not applied (chembl_zinc)
@@ -165,7 +171,12 @@ def differences_filters(dataset: str) -> None:
     ]
     if data_.shape[0] > 0:
         data_.to_csv(
-            f"output/diff_filter/new_filtered_chembl_zinc_{dataset}.csv", index=False
+            os.path.join(
+                "output",
+                "diff_filter",
+                f"new_filtered_chembl_zinc_{dataset}.csv",
+            ),
+            index=False,
         )
 
     # when the old filter is applied but the new filter is not applied (chembl)
@@ -174,7 +185,12 @@ def differences_filters(dataset: str) -> None:
     ]
     if data_.shape[0] > 0:
         data_.to_csv(
-            f"output/diff_filter/lost_filtered_chembl_{dataset}.csv", index=False
+            os.path.join(
+                "output",
+                "diff_filter",
+                f"lost_filtered_chembl_{dataset}.csv",
+            ),
+            index=False,
         )
 
     # when the old filter is applied but the new filter is not applied (chembl_zinc)
@@ -183,7 +199,12 @@ def differences_filters(dataset: str) -> None:
     ]
     if data_.shape[0] > 0:
         data_.to_csv(
-            f"output/diff_filter/lost_filtered_chembl_zinc_{dataset}.csv", index=False
+            os.path.join(
+                "output",
+                "diff_filter",
+                f"lost_filtered_chembl_zinc_{dataset}.csv",
+            ),
+            index=False,
         )
 
 
@@ -212,7 +233,7 @@ def differences_smiles(
     )
 
     # load the dataset
-    file = f"external_data/smiles_datasets/{dataset_name}.csv"
+    file = os.path.join("external_data", "smiles_datasets", f"{dataset_name}.csv")
     dataset = pd.read_csv(file)
     dataset = dataset[dataset["nb_atoms"] <= max_heavy_atoms]
     # filter the dataset to keep only the molecules that pass the filters
@@ -227,9 +248,10 @@ def differences_smiles(
             & (dataset["nb_unknown_gcf_chembl_zinc"] == 0)
         ]
 
-    file_enum = (
-        f"output/enumeration_C_depth_2/enumeration_C_{filter_name}"
-        f"_max_atom_{max_heavy_atoms}_depth_2.txt"
+    file_enum = os.path.join(
+        "output",
+        "enumeration_C_depth_2",
+        f"enumeration_C_{filter_name}_max_atom_{max_heavy_atoms}_depth_2.txt",
     )
     data_enum = pd.read_csv(file_enum, header=None)
 

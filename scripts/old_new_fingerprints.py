@@ -13,6 +13,8 @@ https://greglandrum.github.io/rdkit-blog/posts/2023-01-18-fingerprint-generator-
 for the new way to get the fingerprints but it seems to always use modulo.
 """
 
+import os
+
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
@@ -41,10 +43,10 @@ def get_fingerprints() -> None:
     """script to get the fingerprints with the new way."""
     fingerprints_generator = AllChem.GetMorganGenerator(radius=2)
 
-    file = "external_data/smiles_datasets/ZINC.csv"
+    file = os.path.join("external_data", "smiles_datasets", "ZINC.csv")
     output = "output_file_ecfp_new_zinc.txt"
 
-    file = "external_data/smiles_datasets/ChEMBL.csv"
+    file = os.path.join("external_data", "smiles_datasets", "ChEMBL.csv")
     output = "output_file_ecfp_new_chembl.txt"
 
     with open(file, encoding="utf-8") as f:

@@ -156,16 +156,20 @@ def convert_dataset(input_json: str, output_csv: str, num_proc: int) -> None:
     )
 
     eval_gcf_chembl = evaluator.UnknownGCF(
-        path_db="external_data/gcf1.txt", name="chembl"
+        path_db=os.path.join("external_data", "gcf1.txt"), name="chembl"
     )
     eval_ecfp_chembl = evaluator.UnknownECFP(
-        path_db="external_data/ecfp4_ChEMBL.txt", radius=2, name="chembl"
+        path_db=os.path.join("external_data", "ecfp4_ChEMBL.txt"),
+        radius=2,
+        name="chembl",
     )
     eval_gcf_chembl_zinc = evaluator.UnknownGCF(
-        path_db="external_data/gcf2.txt", name="chembl_zinc"
+        path_db=os.path.join("external_data", "gcf2.txt"), name="chembl_zinc"
     )
     eval_ecfp_chembl_zinc = evaluator.UnknownECFP(
-        path_db="external_data/ecfp4_ChEMBL_ZINC.txt", radius=2, name="chembl_zinc"
+        path_db=os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
+        radius=2,
+        name="chembl_zinc",
     )
 
     # prepare the processes
@@ -256,8 +260,16 @@ if __name__ == "__main__":
     # database = "ZINC"
     # database = "Evo10"
 
-    # input_json = f"external_data/smiles_datasets/{database}_neutral_dict.json"
+    # input_json = os.path.join(
+    #     "external_data",
+    #     "smiles_datasets",
+    #     f"{database}_neutral_dict.json",
+    # )
 
-    # output_csv = f"external_data/smiles_datasets/{database}.csv"
+    # output_csv = os.path.join(
+    #     "external_data",
+    #     "smiles_datasets",
+    #     f"{database}.csv",
+    # )
 
     # convert_dataset(input_json, output_csv, 1)

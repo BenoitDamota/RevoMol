@@ -116,7 +116,7 @@ class UnknownGCF(Evaluation):
             path_db (str, optional): file that contains the reference list of
                 generic cyclic features (GCF) keys.
                 Defaults to os.path.join("external_data", "gcf1.txt").
-                Use "external_data/gcf2.txt" for chembl_zinc database.
+                Use "gcf2.txt" for chembl_zinc database.
             name (str, optional): name of the database used.
                 Defaults to "chembl" for gcf1.txt.
                 Use "chembl_zinc" for gcf2.txt.
