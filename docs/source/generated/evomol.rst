@@ -11,22 +11,23 @@ Subpackages
    evomol.evaluation
    evomol.representation
    evomol.search
+   evomol.visualization
 
 Submodules
 ----------
 
-evomol.cli module
------------------
+evomol.default\_parameters module
+---------------------------------
 
-.. automodule:: evomol.cli
+.. automodule:: evomol.default_parameters
    :members:
    :undoc-members:
    :show-inheritance:
 
-evomol.evomol module
---------------------
+evomol.logging module
+---------------------
 
-.. automodule:: evomol.evomol
+.. automodule:: evomol.logging
    :members:
    :undoc-members:
    :show-inheritance:

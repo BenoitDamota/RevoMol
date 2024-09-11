@@ -3,7 +3,20 @@
 Installation
 ------------
 
-To install EvoMol, you can use the following command:
+Currently, you can install EvoMol by cloning the repository then creating a virtual environment and installing the requirements:
+
+
+.. code-block:: bash
+
+    python3.11 -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install -r requirements_dev.txt
+
+Python 3.10, 3.11 and 3.12 are supported.
+
+
+In the futur, the objective would be to install EvoMol like this, not yet available:
 
 .. code-block:: bash
 

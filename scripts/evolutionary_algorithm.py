@@ -37,7 +37,8 @@ def main() -> None:
     )
 
     logger = init_logger(
-        config_file=os.path.join("logging_configs", "stderr-json-file.json"),
+        # config_file=os.path.join("logging_configs", "stderr-json-file.json"),
+        config_file=os.path.join("logging_configs", "stdout-json-file.json"),
         output_file=os.path.join("logs", "evomol_default.log"),
     )
 

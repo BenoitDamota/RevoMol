@@ -27,6 +27,12 @@
             "formatter": "simple",
             "stream": "ext://sys.stderr"
         },
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout"
+        },
         "file": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
@@ -41,7 +47,8 @@
             "level": "DEBUG",
             "handlers": [
                 "stderr",
-                "file"
+                "file",
+                "stdout"
             ]
         }
     }

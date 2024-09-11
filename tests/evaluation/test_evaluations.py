@@ -1,5 +1,5 @@
 """
-Tests for the molecular graph actions.
+Tests for the evaluations.
 """
 
 import os
@@ -364,13 +364,15 @@ def test_list_ecfp(smiles: str, ecfp: list[int]) -> None:
 def test_known_ecfp() -> None:
     """Test the known ecfp evaluation."""
     ecfp1 = evaluator.UnknownECFP(
-        os.path.join("external_data", "ecfp4_ChEMBL.txt"),
-        "chembl",
+        path_db=os.path.join("external_data", "ecfp4_ChEMBL.txt"),
+        radius=2,
+        name="chembl",
     )
 
     ecfp2 = evaluator.UnknownECFP(
-        os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
-        "chembl_zinc",
+        path_db=os.path.join("external_data", "ecfp4_ChEMBL_ZINC.txt"),
+        radius=2,
+        name="chembl_zinc",
     )
 
     known_smiles = [

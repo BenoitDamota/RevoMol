@@ -128,7 +128,7 @@ class EvolutionaryAlgorithm:
                             MolecularGraph
                         ).canonical_smiles
                         score = new_molecule.value(search_parameters.fitness_criteria)
-                        logger.info(
+                        logger.debug(
                             "New molecule : %s (%1.4f) from %s to replace %s",
                             new_smiles,
                             score,
@@ -150,7 +150,7 @@ class EvolutionaryAlgorithm:
                         )
                         found_improver = True
                     else:
-                        logger.info(
+                        logger.debug(
                             "No improvement found from %s to replace %s",
                             smiles_to_mutate,
                             smiles_to_replace,
@@ -202,7 +202,7 @@ class EvolutionaryAlgorithm:
 
         elapsed_time = time.time() - self.start_time
         logger.info(
-            "End of search - elapsed time: %s",
+            "End of search - elapsed time: %ss",
             elapsed_time,
             extra={"elapsed_time": elapsed_time},
         )

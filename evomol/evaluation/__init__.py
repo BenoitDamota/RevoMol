@@ -3,6 +3,7 @@ This module contains the evaluation classes that are used to evaluate the
 properties of the molecules.
 """
 
+# flake8: noqa
 from .cl_score import CLScore as CLScore
 from .cycle_score import CycleScore as CycleScore
 from .cycle_score import NormalizedCycleScore as NormalizedCycleScore
@@ -15,8 +16,6 @@ from .diversity import ecfp4 as ecfp4
 from .diversity import gen_scaffolds as gen_scaffolds
 from .diversity import scaffolds as scaffolds
 from .diversity import shg_1 as shg_1
-
-# flake8: noqa
 from .evaluation import Evaluation as Evaluation
 from .evaluation import EvaluationError as EvaluationError
 from .evaluation import Function as Function

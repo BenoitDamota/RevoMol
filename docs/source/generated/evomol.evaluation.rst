@@ -60,10 +60,10 @@ evomol.evaluation.logp module
    :undoc-members:
    :show-inheritance:
 
-evomol.evaluation.nb\_perturbations module
-------------------------------------------
+evomol.evaluation.plogp module
+------------------------------
 
-.. automodule:: evomol.evaluation.nb_perturbations
+.. automodule:: evomol.evaluation.plogp
    :members:
    :undoc-members:
    :show-inheritance:

@@ -5,7 +5,7 @@ Welcome to EvoMol's documentation!
 EvoMol is a Python package for evolutionary molecular design.
 It is designed to be a flexible and extensible platform for developing and testing new algorithms for molecular design.
 
-Check out the :doc:`quick_start/quick_start` section for a quick start guide, including the :ref:`installation instructions<installation>`.
+Check out the :ref:`installation instructions<installation>` then dive into the :ref:`user guide<user_guide>` to learn how to use EvoMol.
 
 EvoMol is originally proposed by `Jules Leguy <https://github.com/jules-leguy/EvoMol>`_ and related to the publications [Leguy2020]_ and [Leguy2021]_, please cite them if you use EvoMol in your research.
 
@@ -35,13 +35,17 @@ EvoMol provides a set of tools for molecular design, including:
 - Selection strategies
 
 
+README
+------
+
+.. include:: ../../README.rst
+
 
 .. toctree::
     :maxdepth: 2
     :hidden:
 
     installation
-    quick_start/quick_start
 
 
 .. toctree::

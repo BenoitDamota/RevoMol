@@ -4,14 +4,6 @@ evomol.representation package
 Submodules
 ----------
 
-evomol.representation.ecfp4 module
-----------------------------------
-
-.. automodule:: evomol.representation.ecfp4
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 evomol.representation.molecular\_graph module
 ---------------------------------------------
 

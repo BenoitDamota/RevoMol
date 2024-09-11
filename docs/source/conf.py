@@ -28,7 +28,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
-    # "sphinx.ext.napoleon",
+    "sphinx.ext.napoleon",
 ]
 
 templates_path = ["_templates"]
@@ -40,3 +40,10 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+
+
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "private-members": True,
+}
