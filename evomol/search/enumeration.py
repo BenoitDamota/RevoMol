@@ -400,7 +400,7 @@ def enumerate_from_smiles_multiprocessing(
     with Pool(nb_cpu) as pool:
         while to_explore:
 
-            # Paralléliser la recherche des voisins
+            # find the neighbors of the SMILES to explore in parallel
             neighbors_results = pool.starmap(
                 parallel_find_neighbors,
                 [(smiles, depth) for smiles in to_explore],
@@ -492,7 +492,7 @@ def enumerate_from_smiles_workers(
                     else:
                         found_invalid.add(new_smi)
 
-            # Vérifier si toutes les tâches sont terminées
+            # if all tasks are done, break the loop
             if task_counter.value == 0:
                 break
 

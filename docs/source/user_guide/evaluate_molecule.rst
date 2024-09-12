@@ -12,6 +12,41 @@ Too other classes are available for evaluation:
 
 And the function :func:`.is_valid_molecule` that check if the molecule is valid or not according to the given evaluations.
 
+Existing evaluations
+--------------------
+
+The following evaluations are available in the package:
+
+- :class:`.QED` : Quantitative Estimation of Drug-likeness (QED) score. (through a :class:`.Function` with the function :func:`.qed_score`).
+- :class:`.LogP` : LogP value of the molecule. (through a :class:`.Function` with the function :func:`.log_p`).
+- :class:`.ZincNormalizedLogP` : Normalized LogP value of the molecule. (through a :class:`.Function` with the function :func:`.zinc_normalized_log_p`).
+- :class:`.SAScore` : Synthetic Accessibility Score (SA score). (through a :class:`.Function` with the function :func:`.sa_score`).
+- :class:`.ZincNormalizedSAScore` : Normalized SA score. (through a :class:`.Function` with the function :func:`.zinc_normalized_sa_score`).
+- :class:`.CycleScore` : Cycle score. (through a :class:`.Function` with the function :func:`.cycle_score`).
+- :class:`.NormalizedCycleScore` : Normalized cycle score. (through a :class:`.Function` with the function :func:`.zinc_normalized_cycle_score`).
+- :class:`.PLogP` : Penalized LogP value of the molecule. (through a :class:`.Function` with the function :func:`.penalized_log_p`).
+- :class:`.UnknownGCF` : Unknown Generic Cyclic Features.
+- :class:`.FilterUnknownGCF` : Filter molecules with unknown Generic Cyclic Features.
+- :class:`.UnknownECFP` : Unknown Extended Connectivity Fingerprint.
+- :class:`.FilterUnknownECFP` : Filter molecules with unknown ECFP.
+
+Each evaluation as a name that can be used to retrieve the value of the evaluation from the :class:`.Molecule` object with the :meth:`.Molecule.value` method.
+The name is also used for the fitness of the molecule with the class :class:`.SearchParameters`.
+
+Not finished evaluations:
+
+- :class:`.Diversity` : Diversity of the molecule.
+
+Should be removed from the package:
+
+- :class:`.CLScore` : Chemical Likeness score.
+- :class:`.RDFilter` : Drug-likeness filter.
+
+Should be reintroduced in the package in the future (to remove the need of the guacamol package):
+
+- Rediscovery score
+- Isomer score
+
 Creating an evaluation
 ----------------------
 

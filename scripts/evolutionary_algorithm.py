@@ -50,9 +50,6 @@ def main() -> None:
 
     random.seed(random_seed)
 
-    # the fitness criteria to optimize will be the QED
-    search_parameters.fitness_criteria = "QED"
-
     # the evaluations to use
     evaluations = [
         evaluator.UnknownGCF(
@@ -68,6 +65,9 @@ def main() -> None:
         evaluator.FilterUnknownECFP(threshold=0, name="chembl"),
         evaluator.QED,
     ]
+
+    # the fitness criteria to optimize will be the QED
+    search_parameters.fitness_criteria = evaluator.QED.name
 
     # the population is composed of one empty molecule
     molecules = [Molecule("C")]

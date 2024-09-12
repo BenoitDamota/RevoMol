@@ -11,6 +11,60 @@ They must implement the :py:meth:`.Action.list_actions` class method that return
 
 Then the action can be applied to the molecule with the :py:meth:`.Action.apply` method that call the :py:meth:`.Action._apply` method to implement in the child class.
 
+Existing actions
+----------------
+
+Multiple actions for the molecular graph representation are already implemented in the :py:mod:`evomol.action` module :
+
+- :py:class:`.AddAtomMG` : Add an atom to the molecule
+- :py:class:`.RemoveAtomMG` : Remove an atom from the molecule
+- :py:class:`.ChangeBondMG` : Change the bond between two atoms
+- :py:class:`.CutAtomMG` : Cut an atom from the molecule and link its neighbors together
+- :py:class:`.InsertCarbonMG` : Insert a carbon atom in the molecule
+- :py:class:`.SubstituteAtomMG` : Substitute an atom in the molecule
+- :py:class:`.AddGroupMG` : Add a group of molecules to the molecule
+- :py:class:`.RemoveGroupMG` : Remove a group of molecules from the molecule on a bridge bond
+- :py:class:`.MoveGroupMG` : Move a group of molecules from one atom to another on a bridge bond
+
+You can use the :func:`.setup_default_action_space` method to set the default action space for the molecular graph representation or take inspiration from it to choose the actions you want to use.
+
+You can define the different parameters for the actions and add them to the action space of the molecular graph representation.
+
+.. code-block:: python
+
+    from evomol.action import molecular_graph as mg
+    from evomol.representation import MolecularGraph
+
+
+    mg.AddGroupMG.groups = [
+        mg.Group("C1=CC=CS1", 5, [0]),
+        mg.Group("C1=CC=CC=C1", 6, [0]),
+        mg.Group("[N+](=O)[O-]", 3, [0]),
+        mg.Group("N=[N+]=[N-]", 3, [0]),
+        mg.Group("S(=O)(=O)O", 4, [0]),
+    ]
+
+    mg.ChangeBondMG.avoid_bond_breaking = False
+
+    mg.RemoveGroupMG.remove_only_smallest = True
+    mg.RemoveGroupMG.remove_only_single_bond = False
+    mg.RemoveGroupMG.remove_charged_or_radical = True
+
+    MolecularGraph.action_space = [
+        mg.AddAtomMG,
+        mg.ChangeBondMG,
+        mg.CutAtomMG,
+        mg.InsertCarbonMG,
+        mg.MoveGroupMG,
+        mg.RemoveAtomMG,
+        mg.SubstituteAtomMG,
+    ]
+    if with_add_group:
+        MolecularGraph.action_space.append(mg.AddGroupMG)
+    if with_remove_group:
+        MolecularGraph.action_space.append(mg.RemoveGroupMG)
+
+
 
 Create a new action
 -------------------
